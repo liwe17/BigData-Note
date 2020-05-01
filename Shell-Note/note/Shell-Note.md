@@ -881,12 +881,325 @@ Please input the number2: 3
 ```
 ## Shell工具
 ### cut
+> cut的工作就是"剪",具体的说就是在文件中负责剪切数据用的.
+<br>
+> cut作用就是从文件的每一行剪切字节,字符和字段并将这些字节,字符和字段输出
 
+1. 基本用法
+<br>
+cut [选项参数] filename
+<br>
+说明:默认分隔符是制表符
+2. 选项参数说明
+<table>
+    <tr>
+        <th>选项参数</th>
+        <th>功能</th>
+    </tr>
+    <tr>
+        <th>-f</th>
+        <th>列号,提取第几列</th>
+    </tr>
+    <tr>
+        <th>-d</th>
+        <th>分隔符,按照指定分隔符分割列</th>
+    </tr>
+</table>
 
+3. cut小例子
+```shell script
+[root@li datas]# vi cut.txt 
+dong shen
+guan zhen
+wo wo
+lai lai
+le le
+~
+"cut.txt" 5L, 40C written
+[root@li datas]# cut -f 1,2 cut.txt
+dong shen
+guan zhen
+wo wo
+lai lai
+le le
+[root@li datas]# 
+[root@li datas]# cut -f 1 cut.txt
+dong shen
+guan zhen
+wo wo
+lai lai
+le le
+[root@li datas]# cut -d " " -f 1 cut.txt
+dong
+guan
+wo
+lai
+le
+[root@li datas]# echo $PATH
+/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/usr/java/jdk1.8.0_221/bin:/usr/java/jdk1.8.0_221/jre/bin:/root/bin
+[root@li datas]# echo $PATH | cut -d ":" -f 2- 
+/usr/local/bin:/usr/sbin:/usr/bin:/usr/java/jdk1.8.0_221/bin:/usr/java/jdk1.8.0_221/jre/bin:/root/bin
+```
 ### sed
+> sed是一种流编辑器,它一次处理一行内容.
+> - 处理时,把当前处理的行存储在临时缓冲区中,称为"模式空间",接着用sed命令处理缓冲区中的内容
+> - 处理后,把缓冲区的内容送往屏幕.接着处理下一行,这样不断重复,直到文件末尾.文件内容并没有改变,除非你使用重定向存储输出.
 
+1. 基本用法
+```shell script
+sed [选项参数] 'command' filename
+```
+2. 选项参数
+<table>
+    <tr>
+        <th>选项参数</th>
+        <th>功能</th>
+    </tr>
+    <tr>
+        <th>-e</th>
+        <th>直接在指令列模式上进行sed的动作编辑</th>
+    </tr>
+</table>
 
+3. 命令功能描述
+<table>
+    <tr>
+        <th>命令</th>
+        <th>功能描述</th>
+    </tr>
+    <tr>
+        <th>a</th>
+        <th>新增,a的后面可以接字串,在下一行出现</th>
+    </tr>
+    <tr>
+        <th>d</th>
+        <th>删除</th>
+    </tr>
+    <tr>
+        <th>s</th>
+        <th>查找并替换</th>
+    </tr>
+</table>
+
+4. sed小例子
+```shell script
+[root@li datas]# vi sed.txt 
+dong shen
+guan zhen
+wo  wo
+lai  lai
+
+le  le
+~
+"sed.txt" 6L, 44C written
+[root@li datas]# sed '2a mei nv' sed.txt 
+dong shen
+guan zhen
+mei nv
+wo  wo
+lai  lai
+
+le  le
+[root@li datas]# cat sed.txt 
+dong shen
+guan zhen
+wo  wo
+lai  lai
+
+le  le
+[root@li datas]# sed '/wo/d' sed.txt 
+dong shen
+guan zhen
+lai  lai
+
+le  le
+[root@li datas]# sed 's/wo/ni/g' sed.txt 
+dong shen
+guan zhen
+ni  ni
+lai  lai
+
+le  le
+[root@li datas]# sed -e '2d' -e 's/wo/ni/g' sed.txt 
+dong shen
+ni  ni
+lai  lai
+
+le  le
+[root@li datas]# cat sed.txt 
+dong shen
+guan zhen
+wo  wo
+lai  lai
+
+le  le
+[root@li datas]#  
+```
 ### awk
+> 一个强大的文本分析工具,把文件逐行的读入,以空格为默认分隔符将每行切片,切开的部分再进行分析处理
 
+1. 基本用法
+```shell script
+awk [选项参数] 'pattern1{action1}  pattern2{action2}...' filename
+pattern:表示AWK在数据中查找的内容,就是匹配模式
+action:在找到匹配内容时所执行的一系列命令
+```
+2. 选项参数说明
+<table>
+    <tr>
+        <th>选项参数</th>
+        <th>功能</th>
+    </tr>
+    <tr>
+        <th>-F</th>
+        <th>指定输入文件折分隔符</th>
+    </tr>
+    <tr>
+        <th>-v</th>
+        <th>赋值一个用户定义变量</th>
+    </tr>
+</table>
 
+3. awk小例子
+```shell script
+[root@li datas]# 筛选指定列
+[root@li datas]# cp /etc/passwd ./
+[root@li datas]# awk -F: '/^root/{print $7}' passwd
+/bin/bash
+[root@li datas]# awk -F: '/^root/{print $1","$7}' passwd
+root,/bin/bash
+[root@li datas]# awk -F: 'BEGIN{print "user,shell"} {print $1","$7} END {print "li,/bin/bash"}' passwd 
+user,shell
+root,/bin/bash
+...省略
+hadoop,/bin/bash
+li,/bin/bash
+[root@li datas]# 指定列+1
+[root@li datas]# awk -v i=1 -F: '{print $3+1}' passwd 
+1
+2
+...省略
+1001
+```
+
+4. awk的内置变量
+<table>
+    <tr>
+        <th>变量</th>
+        <th>说明</th>
+    </tr>
+    <tr>
+        <th>FILENAME</th>
+        <th>文件名</th>
+    </tr>
+    <tr>
+        <th>NR</th>
+        <th>已读记录数</th>
+    </tr>
+    <tr>
+        <th>NF</th>
+        <th>浏览记录的域的个数(切割后,列的个数)</th>
+    </tr>
+</table>
+
+5. awk小例子2,统计每行的行号,每行的列数
+```shell script
+[root@li datas]# awk -F: '{print "filename:"FILENAME",linenumber:"NR",columns:"NF}' passwd 
+filename:passwd,linenumber:1,columns:7
+filename:passwd,linenumber:2,columns:7
+...省略
+filename:passwd,linenumber:21,columns:7
+filename:passwd,linenumber:22,columns:7
+[root@li datas]# 
+```
+6. awk小例子3,查询空行的行号
+```shell script
+[root@li datas]# cat sed.txt 
+dong shen
+guan zhen
+wo  wo
+lai  lai
+
+le  le
+[root@li datas]# awk '/^$/{print NR}' sed.txt 
+5
+[root@li datas]# 
+```
 ### sort
+> sort命令是在Linux里非常有用,它将文件进行排序,并将排序结果标准输出.
+1. 基本语法
+```shell script
+sort(选项)(参数)
+```
+<table>
+    <tr>
+        <th>选项</th>
+        <th>说明</th>
+    </tr>
+    <tr>
+        <th>-n</th>
+        <th>按照数值大小排序</th>
+    </tr>
+    <tr>
+        <th>-r</th>
+        <th>相反的顺序排序</th>
+    </tr>
+    <tr>
+        <th>-t</th>
+        <th>设置排序时,使用的分隔符</th>
+    </tr>
+    <tr>
+        <th>-k</th>
+        <th>指定需要排序的列</th>
+    </tr>
+</table>
+2. soft小例子,按照":"分割后的第三列倒序排序
+
+```shell script
+[root@li datas]# touch sort.sh
+[root@li datas]# vi sort.sh 
+bb:40:5.4
+bd:20:4.2
+xz:50:2.3
+cls:10:3.5
+ss:30:1.6
+~
+"sort.sh" 5L, 51C written
+[root@li datas]# sort -t : -nrk 3  sort.sh
+bb:40:5.4
+bd:20:4.2
+cls:10:3.5
+xz:50:2.3
+ss:30:1.6
+[root@li datas]# 
+```
+### 应用小例子
+1. 使用Linux命令查询file1中空行所在的行号
+```shell script
+[root@li datas]# awk '/^$/{print NR}' file1
+```
+2. 有文件file2.txt内容如下:
+<br>
+张三 40
+<br>
+李四 50
+<br>
+王五 60
+<br>
+使用Linux命令计算第二列的和并输出
+```shell script
+[root@li datas]# cat file2.txt | awk -F " " '{sum+=$2} END{print sum}'
+150
+[root@li datas]# awk '{sum+=$2} END{print sum}' file2.txt 
+150
+```
+3. 请用shell脚本写出查找当前文件夹,所有的文本文件内容中包含有字符”shen”的文件名称
+```shell script
+[root@li datas]# grep -r 'shen' ./
+./sed.txt:dong shen
+./cut.txt:dong shen
+[root@li datas]# grep -r 'shen' ./ |cut -d: -f 1
+./sed.txt
+./cut.txt
+[root@li datas]# 
+```
