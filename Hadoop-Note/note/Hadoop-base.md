@@ -301,11 +301,11 @@ drwxr-xr-x. 4 root root    31 5月  22 2017 share
 ```
 
 > - 重要目录
->  - bin目录:存放对Hadoop相关服务(HDFS,YARN)进行操作的脚本
->  - etc目录:Hadoop的配置文件目录,存放Hadoop的配置文件
->  - lib目录:存放Hadoop的本地库(对数据进行压缩解压缩功能)
->  - sbin目录:存放启动或停止Hadoop相关服务的脚本
->  - share目录:存放Hadoop的依赖jar包,文档和官方案例
+>   - bin目录:存放对Hadoop相关服务(HDFS,YARN)进行操作的脚本
+>   - etc目录:Hadoop的配置文件目录,存放Hadoop的配置文件
+>   - lib目录:存放Hadoop的本地库(对数据进行压缩解压缩功能)
+>   - sbin目录:存放启动或停止Hadoop相关服务的脚本
+>   - share目录:存放Hadoop的依赖jar包,文档和官方案例
 
 ## Hadoop运行模式
 > Hadoop运行模式包括:本地模式,伪分布式模式以及完全分布式模式.<br>
@@ -555,7 +555,7 @@ Deleted /user/atguigu/output
 >   - 在YARN上执行WordCount案例
 
 > 执行步骤
->   - 配置集群
+> - 配置集群
 >    - 配置/opt/module/hadoop-2.7.2/etc/hadoop/yarn-site.xml
 >    - 配置:将mapred-site.xml.template重新命名为mapred-site.xml
 
