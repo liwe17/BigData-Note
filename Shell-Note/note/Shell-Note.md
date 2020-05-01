@@ -1175,11 +1175,12 @@ ss:30:1.6
 ```
 ### 应用小例子
 1. 使用Linux命令查询file1中空行所在的行号
+
 ```shell script
 [root@li datas]# awk '/^$/{print NR}' file1
 ```
-2. 有文件file2.txt内容如下:
-<br>
+
+2. 有文件file2.txt内容如下:<br>
 张三 40
 <br>
 李四 50
@@ -1187,6 +1188,7 @@ ss:30:1.6
 王五 60
 <br>
 使用Linux命令计算第二列的和并输出
+
 ```shell script
 [root@li datas]# cat file2.txt | awk -F " " '{sum+=$2} END{print sum}'
 150
@@ -1194,6 +1196,7 @@ ss:30:1.6
 150
 ```
 3. 请用shell脚本写出查找当前文件夹,所有的文本文件内容中包含有字符”shen”的文件名称
+
 ```shell script
 [root@li datas]# grep -r 'shen' ./
 ./sed.txt:dong shen
