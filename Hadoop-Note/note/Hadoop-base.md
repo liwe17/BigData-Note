@@ -394,12 +394,12 @@ yarn    1
 
 ### 伪分布式运行模式
 #### 启动HDFS并运行MapReduce程序
-> - 分析
+> 分析
 >  - 配置集群
 >  - 启动,测试集群增删查
 >  - 执行WordCount案例
 
-> - 执行步骤
+> 执行步骤
 >  - 配置集群
 >    - 设置 /opt/module/hadoop-2.7.2/etc/core-site.xml
 >    - 设置 /opt/module/hadoop-2.7.2/etc/hdfs-site.xml
@@ -549,12 +549,12 @@ Deleted /user/atguigu/output
 ![web控制台](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q39icTnx0nPicyicQ6SYgKTQhO3WfaiaJia3jA7ibYLPbwAzo8DS4iavl7sl7MvWkp8uHSxaEicjhAr3IRl1g/0?wx_fmt=png)
 
 #### 启动YARN并运行MapReduce程序
-> - 分析
+> 分析
 >   - 配置集群在YARN上运行MR
 >   - 启动,测试集群增删查 
 >   - 在YARN上执行WordCount案例
 
-> - 执行步骤
+> 执行步骤
 >   - 配置集群
 >    - 配置/opt/module/hadoop-2.7.2/etc/hadoop/yarn-site.xml
 >    - 配置:将mapred-site.xml.template重新命名为mapred-site.xml
@@ -594,10 +594,10 @@ Deleted /user/atguigu/output
 [root@hadoop102 hadoop]# 
 ```
 
->   - 启动集群
->    - 启动前必须保证NameNode和DataNode已经启动
->    - 启动ResourceManager
->    - 启动NodeManager
+> - 启动集群
+>   - 启动前必须保证NameNode和DataNode已经启动
+>   - 启动ResourceManager
+>   - 启动NodeManager
 
 ```shell script
 [root@hadoop102 hadoop-2.7.2]# jps
@@ -618,11 +618,11 @@ starting nodemanager, logging to /opt/module/hadoop-2.7.2/logs/yarn-root-nodeman
 [root@hadoop102 hadoop-2.7.2]# 
 ```
 
->   - 操作集群
->    - YARN的浏览器页面查看
->    - 删除文件系统上的output文件
->    - 执行MapReduce程序
->    - 查看运行结果
+> - 操作集群
+>   - YARN的浏览器页面查看
+>   - 删除文件系统上的output文件
+>   - 执行MapReduce程序
+>   - 查看运行结果
 
 > 查看控制台:http://hadoop102:8088/cluster
 
