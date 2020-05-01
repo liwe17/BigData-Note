@@ -12,6 +12,7 @@
 
     <modules>
         <module>Shell-Note</module>
+        <module>Hadoop-Note</module>
     </modules>
 
     <!-- 指定JDK1.8编码 -->
