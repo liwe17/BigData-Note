@@ -466,7 +466,8 @@ starting datanode, logging to /opt/module/hadoop-2.7.2/logs/hadoop-root-datanode
 7006 Jps
 [root@hadoop102 hadoop-2.7.2]#
 ```
-> 查看控制台:http://hadoop102:50070/dfshealth.html#tab-overview<br>
+> 查看控制台:http://hadoop102:50070/dfshealth.html#tab-overview
+
 ![web控制台](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q39icTnx0nPicyicQ6SYgKTQhOSsiaqEcicicNzswsBAzsmKx5wM4Tb6bOSypEGW7GUiaWHzhj3jSD5NmT8g/0?wx_fmt=png)
 
 ```shell script
@@ -543,7 +544,8 @@ Deleted /user/atguigu/output
 [root@hadoop102 hadoop-2.7.2]# 
 
 ```
-> 查看控制台:http://hadoop102:50070/explorer.html#/user/atguigu/input <br>
+> 查看控制台:http://hadoop102:50070/explorer.html#/user/atguigu/input
+
 ![web控制台](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q39icTnx0nPicyicQ6SYgKTQhO3WfaiaJia3jA7ibYLPbwAzo8DS4iavl7sl7MvWkp8uHSxaEicjhAr3IRl1g/0?wx_fmt=png)
 
 #### 启动YARN并运行MapReduce程序
@@ -622,7 +624,8 @@ starting nodemanager, logging to /opt/module/hadoop-2.7.2/logs/yarn-root-nodeman
 >    - 执行MapReduce程序
 >    - 查看运行结果
 
-> 查看控制台:http://hadoop102:8088/cluster <br>
+> 查看控制台:http://hadoop102:8088/cluster
+
 ![web控制台](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q39icTnx0nPicyicQ6SYgKTQhOMK97b37T7hu9GlkmzD793wiajEcALKqrpIsG8ichkL2bu4QHlVuiaa0vg/0?wx_fmt=png)
 ![web控制台](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q39icTnx0nPicyicQ6SYgKTQhOYPxAd3bzP2bPuNwrSUMR9IA4aczvsppYNPeAeErib5pozN616sAPcmQ/0?wx_fmt=png)
 ```shell script
@@ -682,7 +685,8 @@ starting historyserver, logging to /opt/module/hadoop-2.7.2/logs/mapred-root-his
 8462 JobHistoryServer
 [root@hadoop102 hadoop-2.7.2]# 
 ```
-> 查看控制台:http://hadoop102:19888/jobhistory <br>
+> 查看控制台:http://hadoop102:19888/jobhistory
+
 ![web控制台](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q39icTnx0nPicyicQ6SYgKTQhOicO3qebEX5f9ttiaLCVF9OD6ibc9F8tY0l2FCu2bSiaEhyicURRT5tZaR7A/0?wx_fmt=png)
 
 #### 配置日志的聚集
@@ -746,7 +750,8 @@ starting historyserver, logging to /opt/module/hadoop-2.7.2/logs/mapred-root-his
 
 ```
 
-> 查看控制台:http://hadoop102:19888/jobhistory <br>
+> 查看控制台:http://hadoop102:19888/jobhistory
+
 ![web控制台](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q39icTnx0nPicyicQ6SYgKTQhO4fSicX7icJOtjDfIfDly0c07OSQicpXLfapuUrSUfAnjv2tHl65elRsAg/0?wx_fmt=png)
 ![web控制台](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q39icTnx0nPicyicQ6SYgKTQhO1pCsf15xDkzUqiaEZe4EEiaSK4xZjic1TYyTsGhAmXt76Sgj4pDlJBxDw/0?wx_fmt=png)
 ![web控制台](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q39icTnx0nPicyicQ6SYgKTQhOIo44uq9sOmGLJdo2h5EMfgyqwG9NxMGYvIJYhGfibCv6nus3KpRC6Nw/0?wx_fmt=png)
