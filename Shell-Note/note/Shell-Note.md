@@ -116,7 +116,7 @@ hello word
         <td>命令1||命令2</td>
         <td>逻辑或 当命令1执行不正确,命令2才执行;命令1正确执行,命令2不执行</td>
     </tr>
-  </table>
+</table>
   
 > 新建一个shell文件,在/tmp 目录下新建一个test.txt,并在文件中新增内容"today is 2020-04-28"
 ```shell script
@@ -230,4 +230,663 @@ hello word
 2
 [root@li datas]#  
 ```
+### 特殊变量
+<table>
+    <tr>
+      <th>变量名</th>
+      <th>作用</th>
+    </tr>
+    <tr>
+      <td>$?</td>
+      <td>最后一次执行的命令返回的状态,0代表成功,非0(具体哪个数由程序决定)代表失败</td>
+    </tr>    
+    <tr>
+      <td>$$</td>
+      <td>当前进程的进程号(PID)</td>
+    </tr>    
+    <tr>
+      <td>$!</td>
+      <td>后台运行的最后一个进程的进程号</td>
+    </tr>    
+    <tr>
+      <td>$n</td>
+      <td>n为数字,$0代表命令本身,$1-9代表第一到第九个参数,十以上的参数需要用大括号包含,如9代表第一到第九个参数,十以上的参数需要用大括号包含,如{10}</td>
+    </tr>
+    <tr>
+      <td>$*</td>
+      <td>这个变量代表命令行中所有参数,$*把所有的参数看成一个整体</td>
+    </tr>
+    <tr>
+      <td>$@</td>
+      <td>这个变量也代表命令行中的所有的参数,不过把每个参数区分对待</td>
+    </tr>
+    <tr>
+      <td>$#</td>
+      <td>这个变量代表命令行中所有参数的个数</td>
+    </tr>             
+</table>
 
+1. 位置变量
+```shell script
+[root@li datas]# vi param.sh 
+#!/bin/bash
+echo "脚本名称为: $0  第一个参数为: $1  第二个参数为: $2"
+echo "一共有 $# 个参数"
+
+echo '遍历 $*'
+for i in "$*"
+do
+ echo "The param is: $i"
+done
+
+echo '遍历 $@'
+for j in "$@"
+do
+ echo "the param is: $j"
+done
+~
+"param.sh" 15L, 248C written
+[root@li datas]# sh param.sh a b
+脚本名称为: param.sh  第一个参数为: a  第二个参数为: b
+一共有 2 个参数
+遍历 $*
+The param is: a b
+遍历 $@
+the param is: a
+the param is: b
+[root@li datas]# echo $?
+0
+[root@li datas]# cat 1.txt
+cat: 1.txt: 没有那个文件或目录
+[root@li datas]# echo $?
+1
+[root@li datas]# 
+
+```
+> 注意事项:
+> - 当$*与$@被双引号""包含时,"$*"会将所有的参数作为一个整体,以"$1 $2 ... $n"的形式输出所有参数
+> - "$@"会将各个参数分开,以"$1" "$2"... $n"的形式输出所有参数
+
+2. 预定义变量
+```shell script
+[root@li datas]# vi pre.sh
+#!/bin/bash
+echo "the current process is $$"
+
+find /root -name pre.sh &
+echo "the last one daemon process is $!"
+~
+"pre.sh" [New] 5L, 113C written
+[root@li datas]# sh pre.sh 
+the current process is 1087
+the last one daemon process is 1088
+[root@li datas]# 
+```
+## Shell中通配符与其他特殊符号
+<table>
+    <tr>
+      <th>通配符</th>
+      <th>作用</th>
+    </tr>
+    <tr>
+      <td>?</td>
+      <td>匹配一个任意字符</td>
+    </tr>
+    <tr>
+      <td>*</td>
+      <td>匹配0个或任意多个任意字符,也就是可以匹配任何内容</td>
+    </tr> 
+    <tr>
+      <td>[]</td>
+      <td>匹配中括号中任意一个字符,例如:[abc]代表一定匹配一个字符,或者是a,或者b,或者c</td>
+    </tr> 
+    <tr>
+      <td>[-]</td>
+      <td>匹配中括号中任意一个字符,-代表一个范围,例如:[a-z],代表匹配一个小写字母</td>
+    </tr> 
+    <tr>
+      <td>[^]</td>
+      <td>逻辑非,表示匹配不是括号中内的一个字符,例如: [^0-9] 代表匹配一个不是数字的字符</td>
+    </tr>     
+</table>
+
+1. 通配符实例
+```shell script
+[root@li datas]# touch abc
+[root@li datas]# touch abcd
+[root@li datas]# touch 012
+[root@li datas]# touch 0abc
+[root@li datas]# ls ?abc
+0abc
+[root@li datas]# ls [0-9]*
+012  0abc
+[root@li datas]# ls [^0-9]*
+abc  abcd  batch.sh  helloword.sh  param.sh  pre.sh
+[root@li datas]# 
+```
+
+## Shell中输入输出重定向及管道符
+### 标准输入输出
+<table>
+    <tr>
+      <th>设备</th>
+      <th>设备文件名</th>
+      <th>文件描述</th>
+      <th>类型</th>
+    </tr>
+    <tr>
+      <td>键盘</td>
+      <td>/dev/stdin</td>
+      <td>0</td>
+      <td>标准输入</td>
+    </tr>
+    <tr>
+      <td>显示器</td>
+      <td>/dev/stdout</td>
+      <td>1</td>
+      <td>标准输出</td>
+    </tr>
+    <tr>
+      <td>显示器</td>
+      <td>/dev/stdout</td>
+      <td>2</td>
+      <td>标准错误输出</td>
+    </tr>
+</table>
+
+### 输出重定向
+<table>
+    <tr>
+        <th>类型</th>
+        <th>符号</th>
+        <th>作用</th>
+    </tr>
+    <tr>
+        <th>标准输出重定向</th>
+        <th>命令>文件</th>
+        <th>以覆盖方式,把命令正确输出,输出到指定的文件或设备当中</th>
+    </tr>
+    <tr>
+        <th>标准输出重定向</th>
+        <th>命令>>文件</th>
+        <th>以追加方式,把命令正确输出,输出到指定的文件或设备当中</th>
+    </tr>
+    <tr>
+        <th>标准错误输出重定向</th>
+        <th>命令2>文件</th>
+        <th>以覆盖方式,把命令的错误输出,输出到指定的文件或设备当中</th>
+    </tr>
+    <tr>
+        <th>标准错误输出重定向</th>
+        <th>命令2>>文件</th>
+        <th>以追加方式,把命令的错误输出,输出到指定的文件或设备当中</th>
+    </tr>
+    <tr>
+        <th></th>
+        <th>命令>文件 2>&1</th>
+        <th>以覆盖方式,把命令的正确和错误输出,输出到指定的文件或设备当中</th>
+    </tr>
+    <tr>
+        <th></th>
+        <th>命令>>文件 2>&1</th>
+        <th>以追加方式,把命令的正确和错误输出,输出到指定的文件或设备当中</th>
+    </tr>
+    <tr>
+        <th>正确和错误输出同时保存</th>
+        <th>命令&>文件</th>
+        <th>以覆盖方式,把命令的正确和错误输出,输出到指定的文件或设备当中</th>
+    </tr>
+    <tr>
+        <th></th>
+        <th>命令&>>文件</th>
+        <th>以追加方式,把命令的正确和错误输出,输出到指定的文件或设备当中</th>
+    </tr>
+    <tr>
+        <th></th>
+        <th>命令>>文件1 命令2>>文件2</th>
+        <th>把正确输出追加到文件1,错误输出追加到文件2</th>
+    </tr>
+</table>
+
+1. 举例说明
+```shell script
+[root@li datas]# ls &>/dev/null
+[root@li datas]# ls 2>1.txt
+012  0abc  1.txt  abc  abcd  batch.sh  helloword.sh  param.sh  pre.sh
+[root@li datas]# cat 1.txt 
+[root@li datas]# 
+[root@li datas]# ls >1.txt
+[root@li datas]# cat 1.txt 
+012
+0abc
+1.txt
+abc
+abcd
+batch.sh
+helloword.sh
+param.sh
+pre.sh
+[root@li datas]# lss &>2.txt
+[root@li datas]# cat 2.txt 
+-bash: lss: 未找到命令
+[root@li datas]# ls &>>2.txt
+[root@li datas]# cat 2.txt 
+-bash: lss: 未找到命令
+012
+0abc
+1.txt
+2.txt
+abc
+abcd
+batch.sh
+helloword.sh
+param.sh
+pre.sh
+[root@li datas]# ls >3.txt 2>&1
+[root@li datas]# cat 3.txt 
+012
+0abc
+1.txt
+2.txt
+3.txt
+abc
+abcd
+batch.sh
+helloword.sh
+param.sh
+pre.sh
+[root@li datas]# lss >>3.txt 2>&1
+[root@li datas]# cat 3.txt 
+012
+0abc
+1.txt
+2.txt
+3.txt
+abc
+abcd
+batch.sh
+helloword.sh
+param.sh
+pre.sh
+-bash: lss: 未找到命令
+[root@li datas]# ls >>11.txt 2>>22.txt
+[root@li datas]# cat 11.txt 
+012
+0abc
+11.txt
+1.txt
+22.txt
+2.txt
+3.txt
+abc
+abcd
+batch.sh
+helloword.sh
+param.sh
+pre.sh
+[root@li datas]# cat 22.txt  
+```
+2. 判断一条命令是否正确
+```shell script
+[root@li datas]# ls &>/dev/null && echo yes || echo no
+yes
+[root@li datas]# lss &>/dev/null && echo yes || echo no
+no 
+```
+> grep [选项] “搜索内容” 文件名
+  <br>
+  选项
+  <br>
+  -i: 忽略大小写
+  <br>
+  -n: 输出行号
+  <br>
+  -v: 反向查找
+  <br>
+  -r: 指定目录下查找,并高亮关键字
+
+1. grep小例子
+```shell script
+[root@li datas]# cat batch.sh 
+#!/bin/bash
+cd /home
+touch test.txt
+echo "today is 2020-04-28" >> test.txt
+[root@li datas]# grep -v 'home' batch.sh 
+#!/bin/bash
+touch test.txt
+echo "today is 2020-04-28" >> test.txt
+[root@li datas]# grep -vn 'home' batch.sh 
+1:#!/bin/bash
+3:touch test.txt
+4:echo "today is 2020-04-28" >> test.txt
+[root@li datas]# grep -r 'home' ./
+./batch.sh:cd /home
+[root@li datas]# grep "home" --color=auto -n batch.sh 
+2:cd /home
+[root@li datas]# 
+```
+## Shell中的运算符
+> 基本语法
+1. $((运算式)) 或 $[运算式]
+2. expr +,-,\*,/,%  加,减,乘,除,取余. 注意:运算符之间要有空格
+```shell script
+[root@li datas]# expr 1 \* 2
+2
+[root@li datas]# expr 1 - 2 
+-1
+[root@li datas]# expr `expr 2 + 3` \* 4
+20
+[root@li datas]# s=$[(2+3)*4]
+[root@li datas]# echo $s
+20
+```
+
+## shell中的条件判断
+> 基本语法
+1. [ condition ] 注意:condition前后要有空格,条件非空即为true,[ wei ]返回true,[] 返回false.
+
+> 常用判断条件
+1. 两个整数之间的比较
+```shell script
+= 字符串比较
+-lt 小于(less than)        -le 小于等于(less equal)
+-eq 等于(equal)            -gt 大于(greater than)
+-ge 大于等于(greater equal) -ne 不等于(not equal)
+```
+2. 按照文件权限判断
+```shell script
+-r 有读权限(read)   -w 有写权限(write) -x 由执行权限(execute)
+```
+3. 按照文件类型判断
+```shell script
+-f 文件存在并且是一个常规文件(file)
+-e 文件存在(existence)
+-d 文件存在并且是一个目录(directory)
+```
+```shell script
+[root@li datas]# [ 22 -eq 23 ]
+[root@li datas]# echo $?
+1
+[root@li datas]# [ 22-eq23 ]
+[root@li datas]# echo $?
+0
+[root@li datas]# [ -w batch.sh ]
+[root@li datas]# echo $?
+0
+[root@li datas]# [ -e batch1.sh ]
+[root@li datas]# echo $?
+1
+[root@li datas]# 
+```
+## Shell中的流程控制
+### if判断
+1. 基本语法
+```shell script
+if [ 条件判断式 ];then
+ 程序
+fi
+
+或者
+if [ 条件判断式 ]
+ then
+  程序
+fi
+```
+> 注意事项:
+> - [ 条件判断式 ],中括号和条件判断式之间必须有空格
+> - if后要有空格
+
+2. 小例子:输入一个数字,如果是1,则输出1,如果是2,则输出2,如果是其它,输出3
+```shell script
+[root@li datas]# vi iftest.sh 
+#!/bin/bash
+
+if [ $1 -eq 1 ];then
+echo 1
+elif [ $1 -eq 2 ]
+ then
+  echo 2
+else
+  echo 3
+fi
+~
+"iftest.sh" 10L, 91C written
+[root@li datas]# sh iftest.sh 1
+1
+[root@li datas]# sh iftest.sh 2
+2
+[root@li datas]# sh iftest.sh 3
+3
+[root@li datas]# sh iftest.sh 4
+3
+[root@li datas]# 
+```
+### case语句
+1. 基本语法
+```shell script
+case $变量名 in
+"值 1")
+    如果符合,执行程序1
+  ;;
+"值 2")
+    如果符合,执行程序2
+  ;;
+...省略其他分支...
+*)
+    如果符合,执行程序1
+  ;;
+esac
+```
+> 注意事项:
+> - case行尾必须为单词"in",每一个模式匹配必须以右括号")"结束
+> - 双分号";;"表示命令序列结束,相当于java中的break
+> - 最后的"*）"表示默认模式,相当于java中的default
+
+2. 小例子:输入一个数字,如果是1,则输出1,如果是2,则输出2,如果是其它,输出3
+```shell script
+[root@li datas]# vi casetest.sh
+#!/bin/bash
+case $1 in
+"1")
+ echo 1
+ ;;
+"2")
+ echo 2
+ ;;
+*)
+ echo 3
+ ;;
+esac
+~
+"casetest.sh" [New] 12L, 77C written
+[root@li datas]# sh casetest.sh 1
+1
+[root@li datas]# sh casetest.sh 2
+2
+[root@li datas]# sh casetest.sh 3
+3
+[root@li datas]# sh casetest.sh 4
+3
+```
+### for循环
+1. 基本语法1
+```shell script
+for(("初始值";"循环控制条件";"变量变化"))
+ do
+  程序
+ done 
+```
+2. 小案例,1累加到100
+```shell script
+[root@li datas]# vi fortest1.sh 
+#!/bin/bash
+s=0
+for((i=1;i<=100;i++))
+do
+ s=$(expr $s + $i)
+done
+
+echo $s
+~
+"fortest1.sh" 8L, 74C written
+[root@li datas]# sh fortest1.sh 
+5050
+```
+3. 基本语法2
+```shell script
+for "变量" in 值1 值2 ...
+do
+ 程序
+done
+```
+
+```shell script
+[root@li datas]# vi fortest2.sh 
+
+#!/bin/bash
+for i in $@
+do
+ echo $i
+done
+
+for i in $*
+do
+ echo $i
+done
+
+for i in "$*"
+do
+ echo $i
+done
+~
+"fortest2.sh" 15L, 103C written
+[root@li datas]# sh fortest2.sh 1 2 3
+1
+2
+3
+1
+2
+3
+1 2 3
+[root@li datas]#
+```
+### while循环
+1. 基本语法
+```shell script
+while [ condition ]
+do
+ 程序
+done
+```
+2. 小例子:从1累加到100
+```shell script
+[root@li datas]# vi whiletest.sh 
+#!/bin/bash
+s=0
+i=0
+while [ $i -le $1 ]
+do
+ s=$[$s+$i]
+ i=$[$i+1]
+done
+
+echo $s
+~
+"whiletest.sh" 10L, 80C written
+[root@li datas]# sh whiletest.sh 100
+5050
+[root@li datas]# 
+```
+## Shell中读取控制台输入
+> 接受键盘输入:read [选项] [变量名]
+ <br>
+ -p “提示信息”:在等待read输入时,输出提示信息
+ <br>
+ -t 秒数 : read 命令会一直等待用户输入,使用此选项可以指定等待时间
+ <br>
+ -s: 隐藏输入的数据
+ <br>
+ -n 字符数:read命令只接受指定的字符数,就会执行
+```shell script
+[root@li datas]# vi read.sh
+#!/bin/bash
+read -t 7 -p "enter your name in 7 seconds " -s -n 2 NAME
+echo $NAME
+~
+"read.sh" 3L, 81C written
+[root@li datas]# sh read.sh 
+enter your name in 7 seconds 22
+[root@li datas]# 
+```
+## Shell中的函数
+### 系统函数
+1. basename基本语法
+> basename [string / pathname] [suffix]
+<br>  	
+> 功能描述:basename命令会删掉所有的前缀包括最后一个（'/'）字符,然后将字符串显示出来
+<br>
+> suffix为后缀,如果suffix被指定了,basename会将pathname或string中的suffix去掉
+```shell script
+[root@li datas]# basename /datas/11.txt
+11.txt
+[root@li datas]# basename /datas/11.txt .txt
+11
+[root@li datas]#
+```
+2. dirname基本语法
+> dirname文件绝对路径
+<br>
+> 功能描述:从给定的包含绝对路径的文件名中去除文件名(非目录的部分),然后返回剩下的路径(目录的部分)
+```shell script
+[root@li datas]# dirname /datas/11.txt 
+/datas
+[root@li datas]# 
+```
+
+### 自定义函数
+1. 基本语法
+```shell script
+[ function ] funname[()]
+{
+	action;
+	[return int;]
+}
+```
+> 注意事项:
+> - 必须在调用函数地方之前,先声明函数,shell脚本是逐行运行.不会像其它语言一样先编译
+> - 函数返回值,只能通过$?系统变量获得,可以显示加:return返回,如果不加,将以最后一条命令运行结果,作为返回值.
+> - return后跟数值n(0-255)
+
+```shell script
+[root@li datas]# vim fun.sh
+#!/bin/bash
+function sum()
+{
+ s=0
+ s=$[$1+$2]
+ echo $s
+}
+
+read -p "Please input the number1: " n1;
+read -p "Please input the number2: " n2;
+sum $n1 $n2;
+~
+"fun.sh" 12L, 154C 已写入
+[root@li datas]# sh fun.sh
+Please input the number1: 2
+Please input the number2: 3
+5
+[root@li datas]# 
+```
+## Shell工具
+### cut
+
+
+### sed
+
+
+### awk
+
+
+### sort
