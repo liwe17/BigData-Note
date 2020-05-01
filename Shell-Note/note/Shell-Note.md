@@ -533,16 +533,11 @@ yes
 [root@li datas]# lss &>/dev/null && echo yes || echo no
 no 
 ```
-> grep [选项] “搜索内容” 文件名
-  <br>
-  选项
-  <br>
-  -i: 忽略大小写
-  <br>
-  -n: 输出行号
-  <br>
-  -v: 反向查找
-  <br>
+> grep [选项] “搜索内容” 文件名<br>
+  选项<br>
+  -i: 忽略大小写<br>
+  -n: 输出行号<br>
+  -v: 反向查找<br>
   -r: 指定目录下查找,并高亮关键字
 
 1. grep小例子
@@ -818,10 +813,8 @@ enter your name in 7 seconds 22
 ## Shell中的函数
 ### 系统函数
 1. basename基本语法
-> basename [string / pathname] [suffix]
-<br>  	
-> 功能描述:basename命令会删掉所有的前缀包括最后一个（'/'）字符,然后将字符串显示出来
-<br>
+> basename [string / pathname] [suffix]<br>  	
+> 功能描述:basename命令会删掉所有的前缀包括最后一个（'/'）字符,然后将字符串显示出来<br>
 > suffix为后缀,如果suffix被指定了,basename会将pathname或string中的suffix去掉
 ```shell script
 [root@li datas]# basename /datas/11.txt
@@ -831,8 +824,7 @@ enter your name in 7 seconds 22
 [root@li datas]#
 ```
 2. dirname基本语法
-> dirname文件绝对路径
-<br>
+> dirname文件绝对路径<br>
 > 功能描述:从给定的包含绝对路径的文件名中去除文件名(非目录的部分),然后返回剩下的路径(目录的部分)
 ```shell script
 [root@li datas]# dirname /datas/11.txt 
@@ -877,14 +869,11 @@ Please input the number2: 3
 ```
 ## Shell工具
 ### cut
-> cut的工作就是"剪",具体的说就是在文件中负责剪切数据用的.
-<br>
+> cut的工作就是"剪",具体的说就是在文件中负责剪切数据用的.<br>
 > cut作用就是从文件的每一行剪切字节,字符和字段并将这些字节,字符和字段输出
 
-1. 基本用法
-<br>
-cut [选项参数] filename
-<br>
+1. 基本用法<br>
+cut [选项参数] filename<br>
 说明:默认分隔符是制表符
 2. 选项参数说明
 <table>
