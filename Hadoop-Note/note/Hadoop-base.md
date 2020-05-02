@@ -785,3 +785,810 @@ starting historyserver, logging to /opt/module/hadoop-2.7.2/logs/mapred-root-his
 > - 自定义配置文件:只有用户想修改某一默认配置值时,才需要修改自定义配置文件,更改相应属性值
 >  - core-site.xml,hdfs-site.xml,yarn-site.xml,mapred-site.xml四个配置文件存放在$HADOOP_HOME/etc/hadoop这个路径上,用户可以根据项目需求重新进行修改配置
 
+### 完全分布式运行模式(重点)
+> 分析
+> - 准备虚拟机3台,hadoop100,hadoop101,hadoop102
+> - 安装JDK,Hadoop环境
+> - 配置集群
+> - 单点启动
+> - 配置SSH,实现免密登录
+> - 集群启动
+
+#### 编写集群分发脚本xsync
+> scp(secure copy)安全拷贝
+1. scp定义:实现服务器与服务器之间的数据拷贝(from server1 to server2) 
+
+2. 基本语法
+
+```shell script
+scp     -r        $dir/$filename                    $user@hadoop$host:$dir/$filename 
+命令   递归        文件路径/名称                      目的用户@主机:目的路径/名称                                       
+``` 
+3. 将hadoop102(已经配置好的Hadoop)复制到hadoop100,hadoop101
+
+```shell script
+[root@hadoop101 ~]# scp -r root@hadoop102:/opt/module/ /opt/module/
+[root@hadoop100 ~]# scp -r root@hadoop102:/opt/module/ /opt/module/
+```
+
+> rsync远程同步工具
+> - rsync主要用于备份和镜像.具有速度快,避免复制相同内容和支持符号链接的优点
+> - rsync和scp区别:用rsync做文件的复制要比scp的速度快,rsync只对差异文件做更新.scp是把所有文件都复制过去
+
+1. 基本语法
+
+```shell script
+rsync    -rvl       $dir/$filename         $user@hadoop$host:$dir/$filename
+命令     选项参数    要拷贝的文件路径/名称    目的用户@主机:目的路径/名称
+```
+<table>
+    <tr>
+        <th>选项</th>
+        <th>功能</th>
+    </tr>
+    <tr>
+        <th>-r</th>
+        <th>递归</th>
+    </tr>
+    <tr>
+        <th>-v</th>
+        <th>显示复制过程</th>
+    </tr>
+    <tr>
+        <th>-l</th>
+        <th>拷贝符号链接</th>
+    </tr>
+</table>
+
+2. 服务器安装rsync软件,将hadoop101机器上的/opt/software目录同步到hadoop102服务器的root用户下的/opt/目录
+```shell script
+[root@hadoop100 ~]# yum install rsync
+[root@hadoop101 ~]# yum install rsync
+[root@hadoop102 ~]# yum install rsync
+[root@hadoop101 ~]# rsync -rvl root@hadoop102:/opt/software  /opt
+root@hadoop102's password: 
+receiving incremental file list
+
+sent 25 bytes  received 125 bytes  42.86 bytes/sec
+total size is 383,173,529  speedup is 2,554,490.19
+[root@hadoop101 ~]# 
+
+```
+> xsync集群分发脚本
+> - 实现:循环复制文件到所有节点的相同目录下
+> - 分析
+>   - rsync命令原始拷贝
+>   - 使用期望脚本
+
+> - 脚本实现
+>   - 进入/usr/local/bin目录下,新建脚本文件xsync
+```shell script
+[root@hadoop102 /]# cd -
+/usr/local/bin
+[root@hadoop102 bin]# vi xsync 
+#!/bin/bash
+#1 获取输入参数个数,无参数,直接退出
+pcount=$#
+if [ $pcount -eq 0 ];then
+ echo no args;
+exit;
+fi
+
+#2 获取文件名称
+p1=$1
+fname=`basename $p1`
+echo fname=$fname
+
+#3 获取上级目录的绝对路径
+pdir=`cd -P $(dirname $p1);pwd`
+echo pdir=$pdir
+
+#4 获取当前用户名称
+user=`whoami`
+
+#5 循环
+for((host=100;host<103;host++));do
+ echo ------------ hadoop$host -------------
+ rsync -rvl $pdir/$fname $user@hadoop$host:$pdir
+done
+~
+[root@hadoop102 bin]# 
+```
+#### 集群配置
+> 集群部署规划
+<table>
+    <tr>
+        <th>名称\主机</th>
+        <th>hadoop100</th>
+        <th>hadoop101</th>
+        <th>hadoop102</th>
+    </tr>
+    <tr>
+        <th>HDFS</th>
+        <th>NameNode/DataNode</th>
+        <th>DataNode</th>
+        <th>SecondaryNameNode/DataNode</th>
+    </tr>
+    <tr>
+        <th>YARN</th>
+        <th>NodeManager</th>
+        <th>NodeManager/ResourceManager</th>
+        <th>NodeManager</th>
+    </tr>
+</table>
+
+> 配置集群
+> - 核心配置文件core-site.xml
+> - HDFS配置文件hdfs-site.xml,配置hadoop-env.sh
+> - YARN配置文件yarn-site.xml,
+> - MapReduce配置文件mapred-site.xml,配置yarn-env.sh
+> - 在集群上分发配置好的Hadoop配置文件
+> - 查看文件分发情况
+
+```shell script
+[root@hadoop100 hadoop]# pwd
+/opt/module/hadoop-2.7.2/etc/hadoop
+[root@hadoop100 hadoop]# vi core-site.xml 
+<configuration>
+      <!-- 指定HDFS中NameNode的地址 -->
+      <property>
+         <name>fs.defaultFS</name>
+         <value>hdfs://hadoop100:9000</value>
+      </property>
+
+      <!-- 指定Hadoop运行时产生文件的存储目录 -->
+      <property>
+        <name>hadoop.tmp.dir</name>
+        <value>/opt/module/hadoop-2.7.2/data/tmp</value>
+      </property>
+
+</configuration>
+"core-site.xml" 32L, 1116C written
+[root@hadoop100 hadoop]# vi hdfs-site.xml 
+<configuration>
+     <property>
+        <name>dfs.replication</name>
+        <value>3</value>
+     </property>
+
+     <!-- 指定Hadoop辅助名称节点主机配置 -->
+     <property>
+        <name>dfs.namenode.secondary.http-address</name>
+        <value>hadoop102:50090</value>
+     </property>
+</configuration>
+~
+"hdfs-site.xml" 30L, 1042C written
+[root@hadoop100 hadoop]# vi yarn-site.xml 
+<configuration>
+<!-- Site specific YARN configuration properties -->
+     <!-- Reducer获取数据的方式 -->
+     <property>
+        <name>yarn.nodemanager.aux-services</name>
+        <value>mapreduce_shuffle</value>
+     </property>
+
+     <!-- 指定YARN的ResourceManager的地址 -->
+     <property>
+        <name>yarn.resourcemanager.hostname</name>
+        <value>hadoop101</value>
+     </property>
+</configuration>
+~
+"yarn-site.xml" 28L, 998C written
+[root@hadoop100 hadoop]# cp mapred-site.xml.template mapred-site.xml
+[root@hadoop100 hadoop]# vi mapred-site.xml
+<configuration>
+     <!-- 指定MR运行在Yarn上 -->
+     <property>
+        <name>mapreduce.framework.name</name>
+        <value>yarn</value>
+     </property>
+</configuration>
+~
+"mapred-site.xml" 25L, 889C written
+[root@hadoop100 hadoop]# 
+[root@hadoop100 hadoop-2.7.2]# vi etc/hadoop/mapred-env.sh 
+export JAVA_HOME=/opt/module/jdk1.8.0_144
+"etc/hadoop/mapred-env.sh" 29L, 1426C written
+[root@hadoop100 hadoop-2.7.2]# 
+[root@hadoop100 hadoop-2.7.2]# vi etc/hadoop/yarn-env.sh 
+# check envvars which might override default args
+if [ "$YARN_HEAPSIZE" != "" ]; then
+  JAVA_HEAP_MAX="-Xmx""$YARN_HEAPSIZE""m"
+fi
+export JAVA_HOME=/opt/module/jdk1.8.0_144
+"etc/hadoop/yarn-env.sh" 122L, 4609C written
+[root@hadoop100 hadoop-2.7.2]# 
+[root@hadoop100 hadoop]# vi hadoop-env.sh 
+export JAVA_HOME=/opt/module/jdk1.8.0_144
+"hadoop-env.sh" 99L, 4266C written
+[root@hadoop100 hadoop]#
+[root@hadoop100 hadoop]# pwd
+/opt/module/hadoop-2.7.2/etc/hadoop
+[root@hadoop100 hadoop]# xsync /opt/module/hadoop-2.7.2/
+fname=hadoop-2.7.2
+pdir=/opt/module
+------------ hadoop100 -------------
+sending incremental file list
+
+sent 25,084 bytes  received 130 bytes  50,428.00 bytes/sec
+total size is 249,337,039  speedup is 9,888.83
+------------ hadoop101 -------------
+sending incremental file list
+hadoop-2.7.2/etc/hadoop/core-site.xml
+hadoop-2.7.2/etc/hadoop/hadoop-env.sh
+hadoop-2.7.2/etc/hadoop/hdfs-site.xml
+hadoop-2.7.2/etc/hadoop/mapred-env.sh
+hadoop-2.7.2/etc/hadoop/mapred-site.xml
+hadoop-2.7.2/etc/hadoop/slaves
+hadoop-2.7.2/etc/hadoop/yarn-env.sh
+hadoop-2.7.2/etc/hadoop/yarn-site.xml
+
+sent 25,570 bytes  received 442 bytes  52,024.00 bytes/sec
+total size is 249,337,039  speedup is 9,585.46
+------------ hadoop102 -------------
+sending incremental file list
+hadoop-2.7.2/etc/hadoop/core-site.xml
+hadoop-2.7.2/etc/hadoop/hadoop-env.sh
+hadoop-2.7.2/etc/hadoop/hdfs-site.xml
+hadoop-2.7.2/etc/hadoop/mapred-env.sh
+hadoop-2.7.2/etc/hadoop/mapred-site.xml
+hadoop-2.7.2/etc/hadoop/mapred-site.xml.template
+hadoop-2.7.2/etc/hadoop/slaves
+hadoop-2.7.2/etc/hadoop/yarn-env.sh
+hadoop-2.7.2/etc/hadoop/yarn-site.xml
+
+sent 25,617 bytes  received 473 bytes  52,180.00 bytes/sec
+total size is 249,337,039  speedup is 9,556.80
+[root@hadoop100 hadoop]# 
+
+[root@hadoop102 bin]# cat /opt/module/hadoop-2.7.2/etc/hadoop/core-site.xml
+<configuration>
+      <!-- 指定HDFS中NameNode的地址 -->
+      <property>
+         <name>fs.defaultFS</name>
+         <value>hdfs://hadoop100:9000</value>
+      </property>
+
+      <!-- 指定Hadoop运行时产生文件的存储目录 -->
+      <property>
+        <name>hadoop.tmp.dir</name>
+        <value>/opt/module/hadoop-2.7.2/data/tmp</value>
+      </property>
+</configuration>
+[root@hadoop102 bin]#
+
+[root@hadoop101 bin]# cat /opt/module/hadoop-2.7.2/etc/hadoop/core-site.xml
+<configuration>
+      <!-- 指定HDFS中NameNode的地址 -->
+      <property>
+         <name>fs.defaultFS</name>
+         <value>hdfs://hadoop100:9000</value>
+      </property>
+
+      <!-- 指定Hadoop运行时产生文件的存储目录 -->
+      <property>
+        <name>hadoop.tmp.dir</name>
+        <value>/opt/module/hadoop-2.7.2/data/tmp</value>
+      </property>
+</configuration>
+[root@hadoop101 bin]#
+```
+
+#### 集群单点启动
+> - 如果集群是第一次启动,需要格式化NameNode
+> - 在hadoop100上启动NameNode
+> - 在hadoop100,hadoop101以及hadoop102上分别启动DataNode
+```shell script
+[root@hadoop100 hadoop-2.7.2]# hadoop namenode -format
+DEPRECATED: Use of this script to execute hdfs command is deprecated.
+Instead use the hdfs command for it.
+
+20/05/02 11:22:58 INFO namenode.NameNode: STARTUP_MSG: 
+/************************************************************
+STARTUP_MSG: Starting NameNode
+STARTUP_MSG:   host = hadoop102/192.168.108.106
+STARTUP_MSG:   args = [-format]
+STARTUP_MSG:   version = 2.7.2
+STARTUP_MSG:   classpath = /opt/module/hadoop-2.7.2/etc/hadoop
+...省略
+20/05/02 11:23:04 INFO util.ExitUtil: Exiting with status 0
+20/05/02 11:23:04 INFO namenode.NameNode: SHUTDOWN_MSG: 
+/************************************************************
+SHUTDOWN_MSG: Shutting down NameNode at hadoop102/192.168.108.106
+************************************************************/
+[root@hadoop100 hadoop-2.7.2]#
+[root@hadoop100 hadoop-2.7.2]# hadoop-daemon.sh start namenode
+starting namenode, logging to /opt/module/hadoop-2.7.2/logs/hadoop-root-namenode-hadoop100.out
+[root@hadoop100 hadoop-2.7.2]# jps
+7222 NameNode
+7289 Jps
+[root@hadoop100 hadoop-2.7.2]# hadoop-daemon.sh start datanode
+starting datanode, logging to /opt/module/hadoop-2.7.2/logs/hadoop-root-datanode-hadoop100.out
+[root@hadoop100 hadoop-2.7.2]# jps
+7313 DataNode
+7222 NameNode
+7384 Jps
+[root@hadoop100 hadoop-2.7.2]#
+
+[root@hadoop101 hadoop-2.7.2]# hadoop-daemon.sh start datanode
+starting datanode, logging to /opt/module/hadoop-2.7.2/logs/hadoop-root-datanode-hadoop101.out
+[root@hadoop101 hadoop-2.7.2]# jps
+7032 DataNode
+7103 Jps
+[root@hadoop101 hadoop-2.7.2]# 
+
+[root@hadoop102 hadoop-2.7.2]# hadoop-daemon.sh start datanode
+starting datanode, logging to /opt/module/hadoop-2.7.2/logs/hadoop-root-datanode-hadoop102.out
+[root@hadoop102 hadoop-2.7.2]# jps
+7385 Jps
+[root@hadoop102 hadoop-2.7.2]# 
+
+```
+
+#### SSH无密登录配置
+> 配置ssh
+1. 基本方法
+```shell script
+[root@hadoop102 hadoop-2.7.2]# ssh hadoop100
+The authenticity of host 'hadoop100 (192.168.108.104)' can't be established.
+ECDSA key fingerprint is SHA256:I7tctBtv4Ka3qyKxgCymTmCA7mGk8t0aq4/mXDPvw1w.
+ECDSA key fingerprint is MD5:0e:45:e6:09:62:d8:2d:de:95:03:3c:03:22:47:60:40.
+Are you sure you want to continue connecting (yes/no)? yes
+Last login: Sat May  2 08:58:30 2020 from 192.168.108.1
+[root@hadoop100 ~]# 
+```
+2. 无密钥配置
+
+> 免密登录原理
+
+![免密登录原理](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q0W0ibC4aKsIHekbhW3aKLxIIk6Qc0tyUbx4m6icvatReIW27CtLpyKkExqTyuhrib4S0z9sxOoTibVAw/0?wx_fmt=png)
+
+> 生成公钥和私钥
+> 将公钥拷贝到要免密登录的目标机器上(三台主机同样的操作)
+```shell script
+[root@hadoop100 hadoop-2.7.2]# cd ~
+[root@hadoop100 ~]# cd .ssh/
+[root@hadoop100 .ssh]# ll
+总用量 4
+-rw-r--r--. 1 root root 561 5月   2 10:18 known_hosts
+[root@hadoop100 .ssh]# ssh-keygen -t rsa
+Generating public/private rsa key pair.
+Enter file in which to save the key (/root/.ssh/id_rsa): 
+Enter passphrase (empty for no passphrase): 
+Enter same passphrase again: 
+Your identification has been saved in /root/.ssh/id_rsa.
+Your public key has been saved in /root/.ssh/id_rsa.pub.
+The key fingerprint is:
+SHA256:yzgjtkCXBb5p+RkewVKD5mNpDmnObFKzXEyhpV5RsAU root@hadoop100
+The key's randomart image is:
++---[RSA 2048]----+
+|    E*=          |
+|   =+B .         |
+|  o*=.+          |
+| .*.OB .         |
+| BoOB.o S        |
+|..Bo.o * .       |
+| o. o B o        |
+|   o o o         |
+|    .            |
++----[SHA256]-----+
+[root@hadoop100 .ssh]# ssh-copy-id hadoop100
+/usr/bin/ssh-copy-id: INFO: Source of key(s) to be installed: "/root/.ssh/id_rsa.pub"
+/usr/bin/ssh-copy-id: INFO: attempting to log in with the new key(s), to filter out any that are already installed
+/usr/bin/ssh-copy-id: INFO: 1 key(s) remain to be installed -- if you are prompted now it is to install the new keys
+root@hadoop100's password: 
+
+Number of key(s) added: 1
+
+Now try logging into the machine, with:   "ssh 'hadoop100'"
+and check to make sure that only the key(s) you wanted were added.
+
+[root@hadoop100 .ssh]# ssh-copy-id hadoop101
+/usr/bin/ssh-copy-id: INFO: Source of key(s) to be installed: "/root/.ssh/id_rsa.pub"
+/usr/bin/ssh-copy-id: INFO: attempting to log in with the new key(s), to filter out any that are already installed
+/usr/bin/ssh-copy-id: INFO: 1 key(s) remain to be installed -- if you are prompted now it is to install the new keys
+root@hadoop101's password: 
+
+Number of key(s) added: 1
+
+Now try logging into the machine, with:   "ssh 'hadoop101'"
+and check to make sure that only the key(s) you wanted were added.
+
+[root@hadoop100 .ssh]# ssh-copy-id hadoop102
+/usr/bin/ssh-copy-id: INFO: Source of key(s) to be installed: "/root/.ssh/id_rsa.pub"
+/usr/bin/ssh-copy-id: INFO: attempting to log in with the new key(s), to filter out any that are already installed
+/usr/bin/ssh-copy-id: INFO: 1 key(s) remain to be installed -- if you are prompted now it is to install the new keys
+root@hadoop102's password: 
+
+Number of key(s) added: 1
+
+Now try logging into the machine, with:   "ssh 'hadoop102'"
+and check to make sure that only the key(s) you wanted were added.
+
+[root@hadoop100 .ssh]# ssh hadoop101
+Last login: Sat May  2 08:58:27 2020 from 192.168.108.1
+[root@hadoop101 ~]# exit
+登出
+Connection to hadoop101 closed.
+[root@hadoop100 .ssh]# ssh hadoop102
+Last login: Sat May  2 08:58:35 2020 from 192.168.108.1
+[root@hadoop102 ~]# exit
+登出
+Connection to hadoop102 closed.
+[root@hadoop100 .ssh]# ssh hadoop101
+Last login: Sat May  2 11:49:30 2020 from 192.168.108.105
+[root@hadoop101 ~]# exit
+登出
+Connection to hadoop101 closed.
+[root@hadoop100 .ssh]# 
+```
+3. .ssh文件夹下(~/.ssh)的文件功能解释
+<table>
+    <tr>
+        <td>文件名</td>
+        <td>作用</td>
+    </tr>
+    <tr>
+        <td>known_hosts</td>
+        <td>记录ssh访问过计算机的公钥(public key)</td>
+    </tr>
+    <tr>
+        <td>id_rsa</td>
+        <td>生成的私钥</td>
+    </tr>        
+    <tr>
+        <td>id_rsa.pub</td>
+        <td>生成的公钥</td>
+    </tr>
+    <tr>
+        <td>authorized_keys</td>
+        <td>存放授权过得无密登录服务器公钥</td>
+    </tr>        
+</table>
+
+#### 集群启动
+> 配置slaves,并同步文件
+
+```shell script
+[root@hadoop100 hadoop]# pwd
+/opt/module/hadoop-2.7.2/etc/hadoop
+[root@hadoop100 hadoop]# vi slaves 
+hadoop100
+hadoop101
+hadoop102
+~
+"slaves" 3L, 30C written
+[root@hadoop100 hadoop]# xsync slaves
+fname=slaves
+pdir=/opt/module/hadoop-2.7.2/etc/hadoop
+------------ hadoop100 -------------
+sending incremental file list
+
+sent 43 bytes  received 12 bytes  110.00 bytes/sec
+total size is 30  speedup is 0.55
+------------ hadoop101 -------------
+sending incremental file list
+slaves
+
+sent 120 bytes  received 41 bytes  107.33 bytes/sec
+total size is 30  speedup is 0.19
+------------ hadoop102 -------------
+sending incremental file list
+slaves
+
+sent 120 bytes  received 41 bytes  322.00 bytes/sec
+total size is 30  speedup is 0.19
+[root@hadoop100 hadoop]# 
+
+```
+
+> 启动集群
+1. 如果集群是第一次启动,需要格式化NameNode,注意格式化之前,一定要先停止上次启动的所有NameNode和DataNode进程,然后再删除data和log数据(三台)
+```shell script
+[root@hadoop100 hadoop-2.7.2]# hadoop-daemon.sh stop datanode
+stopping datanode
+[root@hadoop100 hadoop-2.7.2]# hadoop-daemon.sh stop datanode
+no datanode to stop
+[root@hadoop100 hadoop-2.7.2]# cd data/
+[root@hadoop100 data]# rm -rf *
+[root@hadoop100 data]# ll
+总用量 0
+[root@hadoop100 data]# cd ../
+[root@hadoop100 hadoop-2.7.2]# cd logs/
+[root@hadoop100 logs]# ll
+总用量 64
+-rw-r--r--. 1 root root 24318 5月   2 12:10 hadoop-root-datanode-hadoop100.log
+-rw-r--r--. 1 root root   714 5月   2 11:30 hadoop-root-datanode-hadoop100.out
+-rw-r--r--. 1 root root 30521 5月   2 12:12 hadoop-root-namenode-hadoop100.log
+-rw-r--r--. 1 root root   714 5月   2 11:28 hadoop-root-namenode-hadoop100.out
+-rw-r--r--. 1 root root     0 5月   2 11:27 SecurityAuth-root.audit
+[root@hadoop100 logs]# cat SecurityAuth-root.audit 
+[root@hadoop100 logs]# rm -rf *
+[root@hadoop100 logs]# 
+[root@hadoop100 hadoop-2.7.2]# bin/hdfs namenode -format
+```
+2. 启动HDFS
+```shell script
+[root@hadoop100 hadoop-2.7.2]# sbin/start-dfs.sh
+Starting namenodes on [hadoop100]
+hadoop100: starting namenode, logging to /opt/module/hadoop-2.7.2/logs/hadoop-root-namenode-hadoop100.out
+hadoop101: starting datanode, logging to /opt/module/hadoop-2.7.2/logs/hadoop-root-datanode-hadoop101.out
+hadoop102: starting datanode, logging to /opt/module/hadoop-2.7.2/logs/hadoop-root-datanode-hadoop102.out
+hadoop100: starting datanode, logging to /opt/module/hadoop-2.7.2/logs/hadoop-root-datanode-hadoop100.out
+Starting secondary namenodes [hadoop102]
+hadoop102: starting secondarynamenode, logging to /opt/module/hadoop-2.7.2/logs/hadoop-root-secondarynamenode-hadoop102.out
+[root@hadoop100 hadoop-2.7.2]# jps
+9427 DataNode
+9626 Jps
+9307 NameNode
+[root@hadoop100 hadoop-2.7.2]#
+
+[root@hadoop101 hadoop-2.7.2]# jps
+7633 DataNode
+7704 Jps
+[root@hadoop101 hadoop-2.7.2]# 
+
+[root@hadoop102 hadoop-2.7.2]# jps
+8049 Jps
+8008 SecondaryNameNode
+7918 DataNode
+[root@hadoop102 hadoop-2.7.2]# 
+```
+3. 启动YARN
+> NameNode和ResourceManger如果不是同一台机器,不能在NameNode上启动YARN,应该在ResourceManager所在的机器上启动YARN
+
+```shell script
+[root@hadoop101 hadoop-2.7.2]# sbin/start-yarn.sh
+starting yarn daemons
+starting resourcemanager, logging to /opt/module/hadoop-2.7.2/logs/yarn-root-resourcemanager-hadoop101.out
+hadoop101: starting nodemanager, logging to /opt/module/hadoop-2.7.2/logs/yarn-root-nodemanager-hadoop101.out
+hadoop100: starting nodemanager, logging to /opt/module/hadoop-2.7.2/logs/yarn-root-nodemanager-hadoop100.out
+hadoop102: starting nodemanager, logging to /opt/module/hadoop-2.7.2/logs/yarn-root-nodemanager-hadoop102.out
+[root@hadoop101 hadoop-2.7.2]# 
+```
+4. Web端查看SecondaryNameNode
+> 查看控制台:http://hadoop102:50090/status.html
+
+![web控制台](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q0W0ibC4aKsIHekbhW3aKLxIdepUIMZyhibS2WX6GqsNic4oaYIeRWs4gcGqibxLpZBaMVL81sricNiaGnw/0?wx_fmt=png)
+
+5. 集群测试
+> - 上传文件到集群
+> - 上传文件后查看文件存放在什么位置
+>   - 查看HDFS文件存储路径
+>   - 查看HDFS在磁盘存储文件内容
+> - 拼接
+> - 下载
+
+```shell script
+# 创建文件夹
+[root@hadoop102 hadoop-2.7.2]# hdfs dfs -mkdir -p /user/atguigu/input
+# 上传小文件
+[root@hadoop102 hadoop-2.7.2]# hdfs dfs -put wcinput/wc.input /user/atguigu/input
+# 上传大文件
+[root@hadoop102 hadoop-2.7.2]# bin/hadoop fs -put /opt/software/hadoop-2.7.2.tar.gz /user/atguigu/input
+[root@hadoop102 hadoop-2.7.2]#
+# 查看文件位置
+[root@hadoop102 subdir0]# pwd
+/opt/module/hadoop-2.7.2/data/tmp/dfs/data/current/BP-1739925424-192.168.108.104-1588394337962/current/finalized/subdir0/subdir0
+[root@hadoop102 subdir0]# cat blk_1073741825
+hadoop yarn
+hadoop mapreduce
+aiguigu
+atguigu
+
+[root@hadoop102 subdir0]# 
+# 拼接
+[root@hadoop101 subdir0]# ll
+总用量 194552
+-rw-r--r-- 1 root root        46 5月   2 12:53 blk_1073741825
+-rw-r--r-- 1 root root        11 5月   2 12:53 blk_1073741825_1001.meta
+-rw-r--r-- 1 root root 134217728 5月   2 12:53 blk_1073741826
+-rw-r--r-- 1 root root   1048583 5月   2 12:53 blk_1073741826_1002.meta
+-rw-r--r-- 1 root root  63439959 5月   2 12:54 blk_1073741827
+-rw-r--r-- 1 root root    495635 5月   2 12:54 blk_1073741827_1003.meta
+[root@hadoop101 subdir0]# cat blk_1073741825 >> tmp.file
+[root@hadoop101 subdir0]# cat blk_1073741826 >> tmp.file
+[root@hadoop101 subdir0]# cat blk_1073741827 >> tmp.file
+[root@hadoop101 subdir0]# ll
+总用量 456440
+-rw-r--r-- 1 root root        46 5月   2 12:53 blk_1073741825
+-rw-r--r-- 1 root root        11 5月   2 12:53 blk_1073741825_1001.meta
+-rw-r--r-- 1 root root 134217728 5月   2 12:53 blk_1073741826
+-rw-r--r-- 1 root root   1048583 5月   2 12:53 blk_1073741826_1002.meta
+-rw-r--r-- 1 root root  63439959 5月   2 12:54 blk_1073741827
+-rw-r--r-- 1 root root    495635 5月   2 12:54 blk_1073741827_1003.meta
+-rw-r--r-- 1 root root 197657733 5月   2 13:00 tmp.file
+[root@hadoop101 subdir0]# 
+# 下载
+[root@hadoop101 subdir0]# cd /opt/module/hadoop-2.7.2/
+[root@hadoop101 hadoop-2.7.2]# bin/hadoop fs -get /user/atguigu/input/hadoop-2.7.2.tar.gz ./
+[root@hadoop101 hadoop-2.7.2]# ll |grep hadoop-2.7*
+-rw-r--r--  1 root root 197657687 5月   2 13:03 hadoop-2.7.2.tar.gz
+[root@hadoop101 hadoop-2.7.2]# 
+```
+
+#### 集群启动/停止方式总结
+1. 各个服务组件逐一启动/停止
+> - 分别启动/停止HDFS组件
+
+```shell script
+hadoop-daemon.sh  start/stop  namenode/datanode/secondarynamenode
+```
+> - 启动/停止YARN
+
+```shell script
+yarn-daemon.sh  start/stop  resourcemanager/nodemanager
+```
+
+2. 各个模块分开启动/停止(配置ssh是前提)常用
+
+> - 整体启动/停止HDFS
+
+```shell script
+start-dfs.sh   stop-dfs.sh
+```
+
+> - 整体启动/停止YARN
+
+```shell script
+start-yarn.sh  stop-yarn.sh
+```
+
+#### 集群时间同步
+> 时间同步的方式:找一个机器,作为时间服务器,所有的机器与这台集群时间进行定时的同步,比如,每隔十分钟,同步一次时间
+
+![ntp](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q0W0ibC4aKsIHekbhW3aKLxIT3ZRILRIdNGtIan3ExtI03v7RQHRdssibhFnljytlG5vIOeu0yJIxDA/0?wx_fmt=png)
+
+> 配置时间同步具体实操
+1. 时间服务器配置(hadoop100),必须root用户
+> - 检查ntp是否安装
+> - 修改ntp配置文件
+> - 修改/etc/sysconfig/ntpd 文件
+> - 设置ntpd服务开机启动
+
+```shell script
+[root@hadoop100 ~]# rpm -qa|grep ntp
+ntp-4.2.6p5-29.el7.centos.x86_64
+ntpdate-4.2.6p5-29.el7.centos.x86_64
+[root@hadoop100 ~]# vi /etc/ntp.conf 
+server 127.127.1.0
+fudge 127.127.1.0 stratum 10
+restrict 192.168.108.0 mask 255.255.255.0 nomodify notrap
+
+# Use public servers from the pool.ntp.org project.
+# Please consider joining the pool (http://www.pool.ntp.org/join.html).
+#server 0.centos.pool.ntp.org iburst
+#server 1.centos.pool.ntp.org iburst
+#server 2.centos.pool.ntp.org iburst
+#server 3.centos.pool.ntp.org iburst
+~
+"/etc/ntp.conf" 62L, 2111C written         
+[root@hadoop100 ~]# vi /etc/sysconfig/ntpd
+# Command line options for ntpd
+OPTIONS="-g"
+SYNC_HWCLOCK=yes
+"/etc/sysconfig/ntpd" 3L, 62C written
+[root@hadoop100 ~]# service ntpd start
+Redirecting to /bin/systemctl start ntpd.service
+[root@hadoop100 ~]# service ntpd status
+Redirecting to /bin/systemctl status ntpd.service
+[root@hadoop100 ~]# chkconfig ntpd on
+Created symlink from /etc/systemd/system/multi-user.target.wants/ntpd.service to /usr/lib/systemd/system/ntpd.service.
+[root@hadoop100 ~]# 
+```
+
+2. 其他机器配置(hadoop101/102),必须root用户
+> - 在其他机器配置10分钟与时间服务器同步一次
+> - 修改任意机器时间
+> - 十分钟后查看机器是否与时间服务器同步
+```shell script
+[root@hadoop101 ~]# crontab -e
+no crontab for root - using an empty one
+*/10 * * * * /usr/sbin/ntpdate hadoop100
+~
+"/tmp/crontab.9XH5Ed" 1L, 41C written
+crontab: installing new crontab
+[root@hadoop101 ~]# date -s "2017-9-11 11:11:11"
+2017年 09月 11日 星期一 11:11:11 CST
+[root@hadoop101 ~]# date 
+2017年 09月 11日 星期一 11:11:13 CST
+
+# 同步完成
+[root@hadoop101 opt]# date
+2020年 05月 02日 星期六 13:53:50 CST
+您在 /var/spool/mail/root 中有新邮件
+[root@hadoop101 opt]# date
+```
+
+## Hadoop编译源码
+> 所有操作必须在root用户下完成
+### 前期准备工作
+> 1. CentOS可以联网
+
+> 2. jar包准备(hadoop源码,JDK8,maven,ant,protobuf)
+> - apache-ant-1.9.9-bin.tar.gz
+> - apache-maven-3.0.5-bin.tar.gz
+> - hadoop-2.7.2-src.tar.gz
+> - protobuf-2.5.0.tar.gz
+>
+### jar包安装
+> JDK安装,详见虚拟机准备
+
+> Maven安装
+```shell script
+[root@li software]# tar -zxvf apache-maven-3.0.5-bin.tar.gz -C /opt/module/
+[root@li apache-maven-3.0.5]# vi conf/settings.xml 
+        <mirror>
+                <id>nexus-aliyun</id>
+                <mirrorOf>central</mirrorOf>
+                <name>Nexus aliyun</name>
+                <url>http://maven.aliyun.com/nexus/content/groups/public</url>
+        </mirror>
+"conf/settings.xml" 264L, 10457C written
+[root@li apache-maven-3.0.5]# vi /etc/profile
+#MAVEN_HOME
+export MAVEN_HOME=/opt/module/apache-maven-3.0.5
+export PATH=$PATH:$MAVEN_HOME/bin
+
+"/etc/profile" 85L, 2102C written
+[root@li apache-maven-3.0.5]# source /etc/profile
+[root@li software]# mvn -version
+Apache Maven 3.0.5 (r01de14724cdef164cd33c7c8c2fe155faf9602da; 2013-02-19 21:51:28+0800)
+Maven home: /opt/module/apache-maven-3.0.5
+Java version: 1.8.0_221, vendor: Oracle Corporation
+Java home: /usr/java/jdk1.8.0_221/jre
+Default locale: zh_CN, platform encoding: UTF-8
+OS name: "linux", version: "3.10.0-957.21.3.el7.x86_64", arch: "amd64", family: "unix"
+[root@li software]# 
+```
+> ant安装
+```shell script
+[root@li software]# tar -zxvf apache-ant-1.9.9-bin.tar.gz -C /opt/module/
+[root@li software]# vi /etc/profile
+#ANT_HOME
+export ANT_HOME=/opt/module/apache-ant-1.9.9
+export PATH=$PATH:$ANT_HOME/bin
+~
+"/etc/profile" 87L, 2188C written
+[root@li software]# source /etc/profile
+[root@li software]# ant -version
+Apache Ant(TM) version 1.9.9 compiled on February 2 2017
+[root@li software]# 
+```
+
+> 安装glibc-headers,g++,make和cmake
+```shell script
+[root@li software]# yum install glibc-headers && yum install gcc-c++ && yum install make && yum install cmake
+
+```  
+> 解压protobuf,进入到解压后protobuf主目录,/opt/module/protobuf-2.5.0,然后相继执行命令
+```shell script
+[root@li software]# tar -zxvf protobuf-2.5.0.tar.gz -C /opt/module/ && cd /opt/module/protobuf-2.5.0/
+[root@li protobuf-2.5.0]# ./configure && make && make check && make install && ldconfig
+[root@li protobuf-2.5.0]# vi /etc/profile
+#LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/opt/module/protobuf-2.5.0
+export PATH=$PATH:$LD_LIBRARY_PATH
+
+"/etc/profile" 91L, 2291C written
+[root@li protobuf-2.5.0]# source /etc/profile
+[root@li protobuf-2.5.0]# protoc --version
+libprotoc 2.5.0
+[root@li protobuf-2.5.0]# 
+```
+
+> 安装openssl库, ncurses-devel库
+```shell script
+[root@li software]# yum install openssl-devel && yum install ncurses-devel
+```
+### 编译源码
+1. 解压源码到/opt/目录,进入到hadoop源码主目录
+```shell script
+[root@li software]# tar -zxvf hadoop-2.7.2-src.tar.gz -C /opt/ && cd /opt/hadoop-2.7.2-src
+```
+2. 通过maven执行编译命令,成功的64位hadoop包在/opt/hadoop-2.7.2-src/hadoop-dist/target下
+```shell script
+[root@li hadoop-2.7.2-src]# mvn package -Pdist,native -DskipTests -Dtar
+```
