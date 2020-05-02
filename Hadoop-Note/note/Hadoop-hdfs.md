@@ -310,9 +310,9 @@ Deleted /user/atguigu/test/log.txt
 Replication 10 set: /sanguo/shuguo/kongming.txt
 [root@hadoop102 hadoop]# 
 ```
-> 这里设置的副本数只是记录在NameNode的元数据中,是否真的会有这么多副本,还要看DataNode的数量,目前只有三台设备,也就是最多有3个副本,只有节点增加到10台时,副本才能达到10.
+> 这里设置的副本数只是记录在NameNode的元数据中,是否真的会有这么多副本,还要看DataNode的数量,目前只有三台设备,也就是最多有3个副本,只有节点增加到10台时,副本才能达到10.<br>
 > 控制台:http://hadoop100:50070/explorer.html
+
 ![控制台](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q0W0ibC4aKsIHekbhW3aKLxIib22GU9LSoSsPLN8AGiaQDZJlUZMxu0a5sPDjzIJMUNwk0b7ibVdTyjJw/0?wx_fmt=png)
 
-
-
+## HDFS客户端操作
