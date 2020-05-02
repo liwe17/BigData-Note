@@ -1,11 +1,11 @@
 # Hadoop入门
-## Hadoop框架与大数据生态
-### Hadoop是什么
+## 第一章 Hadoop框架与大数据生态
+### 1.1 Hadoop是什么
 > - Hadoop是由Apache基金会所开发的分布式系统基础框架.
 > - 主要解决,海量数据存储和海量数据的分析计算问题.
 > - 广义上来说,Hadoop通常是一个更广泛的概念-Hadoop生态圈
 
-### Hadoop发展历史
+### 1.2 Hadoop发展历史
 > - Lucene是由Doug Cutting开创的开源软件,用java书写代码,实现与Google类似的全文搜索功能,它提供了全文检索引擎的架构,包括完整的查询引擎和索引引擎. 
 > - 2001年年底成为apache基金会的一个子项目
 > - 对于大数量的场景,Lucene面对与Google同样的困难
@@ -19,7 +19,7 @@
 > - Hadoop名字来源于Doug Cutting儿子的玩具大象
 > - Hadoop就此诞生并迅速发展,标志这云计算时代来临
 
-### Hadoop三大发行版本
+### 1.3 Hadoop三大发行版本
 > Hadoop三大发行版本:Apache,Cloudera,Hortonworks.
 > - Apache版本最原始(最基础)的版本,对于入门学习最好.
 > - Cloudera在大型互联网企业中用的较多.
@@ -42,34 +42,34 @@
 > 下载地址：https://hortonworks.com/downloads/#data-platform <br>
 > 2018年和Cloudera合并
 
-### Hadoop的优势
+### 1.4 Hadoop的优势
 > - 高可靠性:Hadoop底层维护多个数据副本,所以即使Hadoop某个计算元素或存储出现故障,也不会导致数据丢失.
 > - 高扩展性:在集群间分配任务数据,可方便的扩展数以千计的节点.
 > - 高效性:在MapReduce的思想下,Hadoop是并行工作的,以加快任务处理速度.
 > - 高容错性:能够自动将失败的任务重新分配.
 
-### Hadoop的组成
+### 1.5 Hadoop的组成
 > Hadoop 1.x与Hadoop 2.x的区别
 
 ![版本区别](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q39icTnx0nPicyicQ6SYgKTQhO4rO73HbNO81P3cKcGMt25vPWGJI6hb4ZZAPbTuC4ZeB3vjOoE1iaiaDg/0?wx_fmt=png)
 
-#### HDFS架构概述
+#### 1.5.1 HDFS架构概述
 > HDFS(Hadoop Distributed File System)的架构概述:<br>
 ![HDFS概述](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q39icTnx0nPicyicQ6SYgKTQhOTLsXeibX15IA7z30o3oNlNjrGU90QicMdXdvnjubkvpsibdYtQibJ28bxg/0?wx_fmt=png)
 
-#### YARN架构概述
+#### 1.5.2 YARN架构概述
 > YARN架构概述
 
 ![YARN架构概述](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q39icTnx0nPicyicQ6SYgKTQhO9HbygMapibjjheBzib4mODHba4kTBGNKgMD7sloaCiclWMDrthTicrDkhA/0?wx_fmt=png)
 
-#### MapReduce架构概述
+#### 1.5.3 MapReduce架构概述
 > MapReduce将计算分为两个阶段:Map和Reduce
 > - Map阶段并行处理数据 
 > - Reduce阶段对Map的结果记性汇总
 
 ![MapReduce架构概述](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q39icTnx0nPicyicQ6SYgKTQhO6HJaRJOVAPaJ5rMgxB0yGicR4dEOIslAEFZPYhMNDrLfoXeSMiag03mg/0?wx_fmt=png)
 
-### 大数据技术生态体系
+### 1.6 大数据技术生态体系
 > 大数据技术生态体系
 
 ![大数据技术生态体系](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q39icTnx0nPicyicQ6SYgKTQhOZybZTPqAFUtCCHmAicuicAEVNdopTKAMvQrFTUVsWJapDbmBd3cYzuibw/0?wx_fmt=png)
@@ -91,13 +91,13 @@
 > - Apache Mahout是个可扩展的机器学习和数据挖掘库
 > - Zookeeper是Google的Chubby一个开源的实现.它是一个针对大型分布式系统的可靠协调系统,提供的功能包括:配置维护,名字服务,分布式同步,组服务等.ZooKeeper的目标就是封装好复杂易出错的关键服务,将简单易用的接口和性能高效,功能稳定的系统提供给用户
 
-### 推荐系统框架图
+### 1.7 推荐系统框架图
 > 推荐系统框架图
 
 ![推荐系统框架图](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q39icTnx0nPicyicQ6SYgKTQhOib2HEMbgUQL77cxZaInDXtAStr4utX4cWNTolUbQ6ibUPUfy7G2pzWTg/0?wx_fmt=png)
 
-## Hadoop运行环境搭建
-### 虚拟机环境准备
+## 第二章 Hadoop运行环境搭建
+### 2.1 虚拟机环境准备
 > - 安装虚拟机,最小化安装即可
 ```shell script
 [root@hadoop102 ~]# cat /etc/centos-release
@@ -307,12 +307,12 @@ drwxr-xr-x. 4 root root    31 5月  22 2017 share
 >   - sbin目录:存放启动或停止Hadoop相关服务的脚本
 >   - share目录:存放Hadoop的依赖jar包,文档和官方案例
 
-## Hadoop运行模式
+## 第三章 Hadoop运行模式
 > Hadoop运行模式包括:本地模式,伪分布式模式以及完全分布式模式.<br>
 > Hadoop官方网站:http://hadoop.apache.org/
-### 本地模式
+### 3.1 本地模式
 > 官方案例:https://hadoop.apache.org/docs/stable/hadoop-project-dist/hadoop-common/SingleCluster.html
-#### 官方Grep案例
+#### 3.1.1 官方Grep案例
 1. 在hadoop-2.7.2文件下面创建一个input文件夹
 
 ```shell script
@@ -343,7 +343,7 @@ drwxr-xr-x. 4 root root    31 5月  22 2017 share
 [root@hadoop102 output]# 
 ```
 
-#### 官方WordCount案例
+#### 3.1.2 官方WordCount案例
 1. 在hadoop-2.7.2文件下面创建一个wcinput文件夹
 
 ```shell script
@@ -392,8 +392,8 @@ yarn    1
 [root@hadoop102 hadoop-2.7.2]# 
 ````
 
-### 伪分布式运行模式
-#### 启动HDFS并运行MapReduce程序
+### 3.2 伪分布式运行模式
+#### 3.2.1 启动HDFS并运行MapReduce程序
 > 分析
 >  - 配置集群
 >  - 启动,测试集群增删查
@@ -548,7 +548,7 @@ Deleted /user/atguigu/output
 
 ![web控制台](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q39icTnx0nPicyicQ6SYgKTQhO3WfaiaJia3jA7ibYLPbwAzo8DS4iavl7sl7MvWkp8uHSxaEicjhAr3IRl1g/0?wx_fmt=png)
 
-#### 启动YARN并运行MapReduce程序
+#### 3.2.2 启动YARN并运行MapReduce程序
 > 分析
 >   - 配置集群在YARN上运行MR
 >   - 启动,测试集群增删查 
@@ -640,7 +640,7 @@ mapreduce       1
 yarn    1
 [root@hadoop102 hadoop-2.7.2]# 
 ```
-#### 配置历史服务器
+#### 3.2.3 配置历史服务器
 > 为了查看程序的历史运行情况,需要配置一下历史服务器
 
 > - 配置mapred-site.xml
@@ -689,7 +689,7 @@ starting historyserver, logging to /opt/module/hadoop-2.7.2/logs/mapred-root-his
 
 ![web控制台](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q39icTnx0nPicyicQ6SYgKTQhOicO3qebEX5f9ttiaLCVF9OD6ibc9F8tY0l2FCu2bSiaEhyicURRT5tZaR7A/0?wx_fmt=png)
 
-#### 配置日志的聚集
+#### 3.2.4 配置日志的聚集
 > 日志聚集概念:应用运行完成以后,将程序运行日志信息上传到HDFS系统上.<br>
 > 日志聚集功能好处:可以方便的查看到程序运行详情,方便开发调试.<br>
 > 注意:开启日志聚集功能,需要重新启动NodeManager,ResourceManager和HistoryManager.
@@ -756,7 +756,7 @@ starting historyserver, logging to /opt/module/hadoop-2.7.2/logs/mapred-root-his
 ![web控制台](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q39icTnx0nPicyicQ6SYgKTQhO1pCsf15xDkzUqiaEZe4EEiaSK4xZjic1TYyTsGhAmXt76Sgj4pDlJBxDw/0?wx_fmt=png)
 ![web控制台](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q39icTnx0nPicyicQ6SYgKTQhOIo44uq9sOmGLJdo2h5EMfgyqwG9NxMGYvIJYhGfibCv6nus3KpRC6Nw/0?wx_fmt=png)
 
-#### 配置文件说明
+#### 3.2.5 配置文件说明
 > Hadoop配置文件分两类:
 > - 默认配置文件
 <table>
@@ -785,7 +785,7 @@ starting historyserver, logging to /opt/module/hadoop-2.7.2/logs/mapred-root-his
 > - 自定义配置文件:只有用户想修改某一默认配置值时,才需要修改自定义配置文件,更改相应属性值
 >  - core-site.xml,hdfs-site.xml,yarn-site.xml,mapred-site.xml四个配置文件存放在$HADOOP_HOME/etc/hadoop这个路径上,用户可以根据项目需求重新进行修改配置
 
-### 完全分布式运行模式(重点)
+### 3.3 完全分布式运行模式(重点)
 > 分析
 > - 准备虚拟机3台,hadoop100,hadoop101,hadoop102
 > - 安装JDK,Hadoop环境
@@ -794,7 +794,7 @@ starting historyserver, logging to /opt/module/hadoop-2.7.2/logs/mapred-root-his
 > - 配置SSH,实现免密登录
 > - 集群启动
 
-#### 编写集群分发脚本xsync
+#### 3.3.1 编写集群分发脚本xsync
 > scp(secure copy)安全拷贝
 1. scp定义:实现服务器与服务器之间的数据拷贝(from server1 to server2) 
 
@@ -894,7 +894,7 @@ done
 ~
 [root@hadoop102 bin]# 
 ```
-#### 集群配置
+#### 3.3.2 集群配置
 > 集群部署规划
 <table>
     <tr>
@@ -1076,7 +1076,7 @@ total size is 249,337,039  speedup is 9,556.80
 [root@hadoop101 bin]#
 ```
 
-#### 集群单点启动
+#### 3.3.3 集群单点启动
 > - 如果集群是第一次启动,需要格式化NameNode
 > - 在hadoop100上启动NameNode
 > - 在hadoop100,hadoop101以及hadoop102上分别启动DataNode
@@ -1127,7 +1127,7 @@ starting datanode, logging to /opt/module/hadoop-2.7.2/logs/hadoop-root-datanode
 
 ```
 
-#### SSH无密登录配置
+#### 3.3.4 SSH无密登录配置
 > 配置ssh
 1. 基本方法
 ```shell script
@@ -1248,7 +1248,7 @@ Connection to hadoop101 closed.
     </tr>        
 </table>
 
-#### 集群启动
+#### 3.3.5 集群启动
 > 配置slaves,并同步文件
 
 ```shell script
@@ -1409,7 +1409,7 @@ atguigu
 [root@hadoop101 hadoop-2.7.2]# 
 ```
 
-#### 集群启动/停止方式总结
+#### 3.3.6 集群启动/停止方式总结
 1. 各个服务组件逐一启动/停止
 > - 分别启动/停止HDFS组件
 
@@ -1436,7 +1436,7 @@ start-dfs.sh   stop-dfs.sh
 start-yarn.sh  stop-yarn.sh
 ```
 
-#### 集群时间同步
+#### 3.3.7 集群时间同步
 > 时间同步的方式:找一个机器,作为时间服务器,所有的机器与这台集群时间进行定时的同步,比如,每隔十分钟,同步一次时间
 
 ![ntp](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q0W0ibC4aKsIHekbhW3aKLxIT3ZRILRIdNGtIan3ExtI03v7RQHRdssibhFnljytlG5vIOeu0yJIxDA/0?wx_fmt=png)
@@ -1502,9 +1502,9 @@ crontab: installing new crontab
 [root@hadoop101 opt]# date
 ```
 
-## Hadoop编译源码
+## 第四章 Hadoop编译源码
 > 所有操作必须在root用户下完成
-### 前期准备工作
+### 4.1 前期准备工作
 > 1. CentOS可以联网
 
 > 2. jar包准备(hadoop源码,JDK8,maven,ant,protobuf)
@@ -1513,7 +1513,7 @@ crontab: installing new crontab
 > - hadoop-2.7.2-src.tar.gz
 > - protobuf-2.5.0.tar.gz
 >
-### jar包安装
+### 4.2 jar包安装
 > JDK安装,详见虚拟机准备
 
 > Maven安装
@@ -1583,7 +1583,7 @@ libprotoc 2.5.0
 ```shell script
 [root@li software]# yum install openssl-devel && yum install ncurses-devel
 ```
-### 编译源码
+### 4.3 编译源码
 1. 解压源码到/opt/目录,进入到hadoop源码主目录
 ```shell script
 [root@li software]# tar -zxvf hadoop-2.7.2-src.tar.gz -C /opt/ && cd /opt/hadoop-2.7.2-src
