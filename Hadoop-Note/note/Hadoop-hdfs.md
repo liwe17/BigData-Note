@@ -24,13 +24,13 @@
 ![架构1](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q0W0ibC4aKsIHekbhW3aKLxIgBhoWg1ZhjfibtkpDJjNsVZ6essHbW8UjmuxSUXWsFF4vloVYstVC8g/0?wx_fmt=png)
 ![架构2](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q0W0ibC4aKsIHekbhW3aKLxIjnu3zOtp2fzl8VqnPsrAhlicNm47by9C6bWtcBhSP37xbORicbxYkyfg/0?wx_fmt=png)
 
-### 1.4 HDFS文件块大小
+### 1.4 HDFS文件块大小(面试重点)
 > HDFS文件块大小
 
 ![块大小1](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q0W0ibC4aKsIHekbhW3aKLxI3VfqT53yiblIxLDUw38USFAbQbcdqxBfdOicefEKqn85MIlIsoTzcv1g/0?wx_fmt=png)
 ![块大小2](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q0W0ibC4aKsIHekbhW3aKLxIqOx5sBYykTyDYGvMwHjsj1Y7vJFsLcicoqYAwekWCqgfUOqg87rVkGQ/0?wx_fmt=png)
 
-## 第二章 HDFS的Shell操作
+## 第二章 HDFS的Shell操作(开发重点)
 
 1. 基本语法
 ```shell script
@@ -315,7 +315,7 @@ Replication 10 set: /sanguo/shuguo/kongming.txt
 
 ![控制台](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q0W0ibC4aKsIHekbhW3aKLxIib22GU9LSoSsPLN8AGiaQDZJlUZMxu0a5sPDjzIJMUNwk0b7ibVdTyjJw/0?wx_fmt=png)
 
-## 第三章 HDFS客户端操作
+## 第三章 HDFS客户端操作(开发重点)
 ### 3.1 HDFS客户端环境准备
 > 1. 安装windows的Hadoop,配置环境(百度)
 > 2. 创建maven工程(Hadoop-Demo),导入相关依赖与日志打印
@@ -627,7 +627,8 @@ type hadoop-2.7.2.tar.gz.part2 >> hadoop-2.7.2.tar.gz.part1
 合并完成后,将hadoop-2.7.2.tar.gz.part1重新命名为hadoop-2.7.2.tar.gz,解压发现该tar包非常完整.
 
 ## 第四章 HDFS的数据流(面试重点)
-#### 4.1 剖析文件写入
+### 4.1 HDFS写数据流程
+#### 4.1.1 剖析文件写入
 > HDFS写数据流程
 
 ![流程](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q1iabbKdhOlI5QdsICMxmojFI94BgOZiblpJHeNtAhvcVPwiaGibbrkrGMwkAf2TaxHqvkvulfEoCEjrQ/0?wx_fmt=png)
@@ -643,7 +644,7 @@ type hadoop-2.7.2.tar.gz.part2 >> hadoop-2.7.2.tar.gz.part1
 7. 客户端开始往dn1上传第一个Block(先从磁盘读取数据放到一个本地内存缓存),以Packet为单位,dn1收到一个Packet就会传给dn2,dn2传到dn3;dn1每传一个Packet会放入一个应答队列等待应答.
 8. 当一个Block传输完成之后,客户端再次请求NameNode上传第二个Block的服务器(重复3-7步).
 
-#### 4.2 网络拓扑-节点距离计算
+#### 4.1.2 网络拓扑-节点距离计算
 > 在HDFS写数据的过程中,NameNode会选择举例待上传最近距离的DataNode接收数据.<br>
 > 节点距离:两个节点到达最近的共同祖先的距离总和.
 
@@ -653,6 +654,190 @@ type hadoop-2.7.2.tar.gz.part2 >> hadoop-2.7.2.tar.gz.part1
 
 ![节点距离](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q1iabbKdhOlI5QdsICMxmojF0bU0wLGnDUfSKgmxtms8ict6RhtXh91uSwicz5QN19uA622xFIrNNiapg/0?wx_fmt=png)
 
-#### 4.3 机架感知(副本存储节点选择)
+#### 4.1.3 机架感知(副本存储节点选择)
+1. 官方IP地址,机架感知说明
+> http://hadoop.apache.org/docs/r2.7.2/hadoop-project-dist/hadoop-hdfs/HdfsDesign.html#Data_Replication
+
+> For the common case, when the replication factor is three, HDFS’s placement policy is to put one replica on one node in the local rack, another on a different node in the local rack, and the last on a different node in a different rack.
+
+
+2. Hadoop2.7.2副本节点选择
+
+![节点选择](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q1iabbKdhOlI5QdsICMxmojF1NFrRzXdGtSeWvs1MdDyTMumZxHOInWaSh3dmDnjrg9iaeBgtL2CZyw/0?wx_fmt=png)
+
+### 4.2 HDFS读数据流程
+> HDFS读数据流程
+
+![读流程](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q1iabbKdhOlI5QdsICMxmojFMA1grfpKKxic66Yz8TPsy7vNw4k5aMIfgv6EVyFQOGYx76JeZFJrMgA/0?wx_fmt=png)
+
+1. 客户端通过Distributed FileSystem向NameNode请求下载文件,NameNode通过查询元数据,找到文件块所在的DataNode地址.
+2. 挑选一台DataNode(就近原则,然后随机)服务器,请求读取数据.
+3. DataNode开始传输数据给客户端(从磁盘里面读取数据输入流),以Packet为单位做校验.
+4. 客户端以Packet为单位接收,现在本地缓存,然后写入目标文件.
+
+## 第五章 NameNode和SecondaryNameNode(面试重点)
+### 5.1 NN和2NN工作机制
+> 思考:NameNode中的元数据是存储在哪里的?
+
+> 首先,我们做个假设,如果存在NameNode节点的磁盘中,因为经常需要进行随机访问,还有响应客户请求,必然效率过低,因此元数据需要存放在内存中,但如果只存在内存中,一旦断电,元数据丢失,就整个集群无法工作了,因此产生在磁盘中备份元数据的FsImage.<br>
+> 这样又会带来新问题,当内存中元数据更新时,如果同时更新FsImage,就会导致效率过低,但如果不更新,就会发生一致性问题,一旦NameNode节点断电,就会产生数据丢失.因此引入Edits文件(只进行追加,效率很高),每当元数据有更新或添加元数据时,修改内存中的元数据并追加到Edits中.这样,一旦NameNode断电,可以通过FsImage和Edits的合并,合成元数据.<br>
+> 但是如果长时间添加数据到Edits中,会导致该文件数据过大,效率降低,而且一旦断电,恢复元数据需要的时间过长,因此需要定期进行FsImage和Edits合并,如果这个操作有NameNode完成,又会效率过低,因此,引入一个新的节点SecondaryNameNode,专门用于FsImage和Edits的合并.
+
+> NN和2NN工作机制
+
+![机制](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q1iabbKdhOlI5QdsICMxmojFicqCk0vVrl6Bqv4U0IOBhicq1W1icwibOVMUn6UrGicssl7m67yT6eyPVpA/0?wx_fmt=png)
+
+1. 第一阶段:NameNode启动
+> - 第一次启动NameNode格式化后,创建FsImage和Edits文件,如果不是第一次启动,直接加载编辑日志和镜像文件到内存.
+> - 客户端对元数据进行增删改的请求.
+> - NameNode记录操作日志,更新滚动日志.
+> - NameNode在内存中对数据进行增删改.
+
+2. 第二阶段:Secondary NameNode工作
+> - Secondary NameNode询问NameNode是否需要CheckPoint,直接返回NameNode是否检查结果.
+> - Secondary NameNode请求执行CheckPoint.
+> - NameNode滚动正在写的Edits日志.
+> - 将滚动前的编辑日志和镜像文件拷贝到Secondary NameNode.
+> - Secondary NameNode加载编辑日志和镜像文件内存,并合并.
+> - 生成新的镜像文件FsImage.chkPoint.
+> - 拷贝FsImage.chkPoint到NameNode.
+> - NameNode将FsImage.chkPoint重新命名为FsImage.
+
+> NN和2NN工作机制详解:
+> FsImage:NameNode内存中元数据序列化后形成的文件.<br>
+> Edits:记录客户端更新元数据信息的每一步操作(可通过Edits运算出元数据).<br>
+> NameNode启动时,先滚动Edits并生成一个空的edits.inprogress,然后加载Edits和FsImage到内存中,此时NameNode内存就持有最新的元数据信息,Client开始对NameNode发送元数据的增删改的请求,这些请求就会被记录到edits.inprogress中(查询元数据的操作不会被记录到Edits中,因为查询不会更改元数据信息),如果此时NameNode挂掉,重启后会从Edits中读取元数据的信息,然后NameNode会在内存中执行元数据的增删改的操作.<br>
+> 由于Edits中记录的操作会越来越多,Edits文件会越来越大,导致NameNode在启动加载Edits时会很慢,所以需要对Edits和FsImage进行合并(所谓合并,就是将Edits和FsImage加载到内存中,照着Edits中的操作一步一步执行,最终形成新的FsImage).<br>
+> Secondary NameNode的作用就是帮助NameNode进行Edits和FsImage的合并工作.<br>
+> Secondary NameNode首先会询问NameNode是否需要CheckPoint(触发CHeckPoint需要满足两个条件中任意一个,定时时间到或Edits数据写满了),直接带回NameNode是否检查结果.Secondary NameNode执行CheckPoint操作,首先会让NameNode滚动Edits并生成一个空的edits.inprogress,滚动Edits的目的是给Edits打个标记,以后所有新的操作都写入edits.inprogress,其他未合并Edits和FsImage会拷贝到Secondary NameNode的本地,然后将拷贝的Edits和FsImage加载到内存中进行合并,生成FsImage.ChkPoint,然后将FsImage.ChkPoint拷贝给NameNode重名为FsImage后替换原来的FsImage.<br>
+> NameNode在启动时就只需要加载之前未合并的Edits和FsImage即可,因为合并过的Edits中的元数据信息已经被记录在FsImage中.
+
+### 5.2 FsImage和Edits解析
+1. 概念
+
+
+2. oiv查看FsImage文件
+> 查看oiv和oev命令
+
+
+
+> 基本语法
+
+
+
+> 案例实操
+
+
+3. oev查看Edits文件
+> 基础语法
+
+
+> 案例实操
+
+### 5.3 CheckPoint时间设置
+
+
+
+### 5.4 NameNode故障处理
+
+
+
+### 5.5 集群安全模式
+
+
+
+### 5.6 NameNode多目录配置
+
+
+## 第六章 DataNode(面试开发重点)
+### 6.1 DataNode工作机制
+
+
+
+### 6.2 数据完整性
+
+
+
+### 6.3 掉线时限参数设置
+
+
+
+### 6.4 服役新数据节点
+
+
+### 6.5 服役旧数据节点
+#### 6.5.1 添加白名单
+
+
+#### 6.5.2 黑名单退役
+
+
+
+
+### 6.6 DataNode多目录配置
+
+
+
+
+## 第七章 HDFS2.X新特性
+### 7.1 集群间数据拷贝
+
+
+### 7.2 小文件存档
+
+
+### 7.3 回收站
+
+
+### 7.4 快照管理
+
+
+## 第八章 HDFS-HA高可用
+### 8.1 HA概述
+
+
+
+### 8.2 HDFS-HA工作机制
+#### 8.2.1 HDFS-HA工作要点
+
+
+
+#### 8.2.2 HDFS-HA自动故障转移工作机制
+
+
+### 8.3 HDFS-HA集群配置
+#### 8.3.1 环境准备
+
+
+#### 8.3.2 规划集群
+
+
+
+#### 8.3.3 配置Zookeeper集群
+
+
+
+#### 8.3.4 配置HDFS-HA集群
+
+
+#### 8.3.5 启动HDFS-HA集群  
+
+
+#### 8.3.6 配置HDFS-HA自动故障转移
+
+
+### 8.4 YARN-HA配置
+#### 8.4.1 YARN-HA工作机制
+
+#### 8.4.2 配置YARN-HA集群
+
+
+### 8.5 HDFS Federation架构设计
+
+
+
+
+
+  
 
 
