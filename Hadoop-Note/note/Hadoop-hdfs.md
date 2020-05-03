@@ -316,3 +316,7 @@ Replication 10 set: /sanguo/shuguo/kongming.txt
 ![控制台](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q0W0ibC4aKsIHekbhW3aKLxIib22GU9LSoSsPLN8AGiaQDZJlUZMxu0a5sPDjzIJMUNwk0b7ibVdTyjJw/0?wx_fmt=png)
 
 ## 第三章 HDFS客户端操作
+### 3.1 HDFS客户端环境准备
+> 1. 安装windows的Hadoop,配置环境变(百度)
+> 2. 创建maven工程,导入相关依赖与日志打印
+> 3. 编写测试代码,执行程序
