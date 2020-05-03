@@ -721,35 +721,368 @@ type hadoop-2.7.2.tar.gz.part2 >> hadoop-2.7.2.tar.gz.part1
 2. oiv查看FsImage文件
 > 查看oiv和oev命令
 
-
+```shell script
+[root@hadoop100 current]# hdfs 
+  oiv                  apply the offline fsimage viewer to an fsimage
+  oev                  apply the offline edits viewer to an edits file
+[root@hadoop100 current]# 
+```
 
 > 基本语法
 
-
+```shell script
+hdfs oiv -p 文件类型 -i镜像文件 -o 转换后文件输出路径
+```
 
 > 案例实操
 
+> - 格式化FsImage文件
+
+```shell script
+[root@hadoop100 current]# pwd
+/opt/module/hadoop-2.7.2/data/tmp/dfs/name/current
+[root@hadoop100 current]# hdfs oiv -p XML -i fsimage_0000000000000000140 -o /opt/module/hadoop-2.7.2/fsimage.xml
+[root@hadoop100 current]# 
+```
+
+> - 导入idea的f.xml进行格式化
+
+```xml
+<inode>
+	<id>16386</id>
+	<type>DIRECTORY</type>
+	<name>user</name>
+	<mtime>1512722284477</mtime>
+	<permission>atguigu:supergroup:rwxr-xr-x</permission>
+	<nsquota>-1</nsquota>
+	<dsquota>-1</dsquota>
+</inode>
+<inode>
+	<id>16387</id>
+	<type>DIRECTORY</type>
+	<name>atguigu</name>
+	<mtime>1512790549080</mtime>
+	<permission>atguigu:supergroup:rwxr-xr-x</permission>
+	<nsquota>-1</nsquota>
+	<dsquota>-1</dsquota>
+</inode>
+<inode>
+	<id>16389</id>
+	<type>FILE</type>
+	<name>wc.input</name>
+	<replication>3</replication>
+	<mtime>1512722322219</mtime>
+	<atime>1512722321610</atime>
+	<perferredBlockSize>134217728</perferredBlockSize>
+	<permission>atguigu:supergroup:rw-r--r--</permission>
+	<blocks>
+		<block>
+			<id>1073741825</id>
+			<genstamp>1001</genstamp>
+			<numBytes>59</numBytes>
+		</block>
+	</blocks>
+</inode >
+```
+
+> FsImage中没有记录块所对应的DataNode,为什么?<br>
+> 在集群启动后,要求DataNode上报数据块信息,并间隔一段时间后再次上报.
 
 3. oev查看Edits文件
 > 基础语法
 
+```shell script
+hdfs oev -p 文件类型 -i编辑日志 -o 转换后文件输出路径
+```
 
 > 案例实操
 
+> - 格式化Edits文件
+
+```shell script
+[root@hadoop100 current]# pwd
+/opt/module/hadoop-2.7.2/data/tmp/dfs/name/current
+[root@hadoop100 current]# hdfs oev -p XML -i edits_0000000000000000141-0000000000000000141 -o /opt/module/hadoop-2.7.2/edits.xml
+[root@hadoop100 current]# 
+```
+
+> - 导入idea的e.xml进行格式化
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<EDITS>
+  <EDITS_VERSION>-63</EDITS_VERSION>
+  <RECORD>
+    <OPCODE>OP_START_LOG_SEGMENT</OPCODE>
+    <DATA>
+      <TXID>141</TXID>
+    </DATA>
+  </RECORD>
+</EDITS>
+```
+
 ### 5.3 CheckPoint时间设置
+> hdfs-default.xml中配置
 
+1. 通常情况下,SecondaryNameNode每隔一小时执行一次
 
+```xml
+<property>
+  <name>dfs.namenode.checkpoint.period</name>
+  <value>3600</value>
+</property>
+
+```
+2. 一分钟检查一次操作次数,当操作次数达到1百万,SecondaryNameNode执行一次
+
+```xml
+<property>
+  <name>dfs.namenode.checkpoint.txns</name>
+  <value>1000000</value>
+<description>操作动作次数</description>
+</property>
+
+<property>
+  <name>dfs.namenode.checkpoint.check.period</name>
+  <value>60</value>
+<description> 1分钟检查一次操作次数</description>
+</property >
+```
 
 ### 5.4 NameNode故障处理
 
+> NameNode故障后,可以采用如下两种方法恢复数据
 
+> - 将SecondaryNameNode中数据拷贝到NameNode存储数据的目录
+
+1. kill -9 NameNode进程
+
+```shell script
+[root@hadoop100 current]# jps
+6881 NodeManager
+7108 NameNode
+7209 DataNode
+7692 Jps
+[root@hadoop100 current]# kill -9 7108
+[root@hadoop100 current]# 
+```
+
+2. 删除NameNode存储的数据(/opt/module/hadoop-2.7.2/data/tmp/dfs/name/*)
+
+```shell script
+[root@hadoop100 hadoop-2.7.2]# rm -rf /opt/module/hadoop-2.7.2/data/tmp/dfs/name/*
+[root@hadoop100 hadoop-2.7.2]# 
+```
+
+3. 拷贝SecondaryNameNode中的数据到原NameNode存储数据目录
+
+```shell script
+[root@hadoop102 namesecondary]# jps
+7025 DataNode
+7339 Jps
+6876 NodeManager
+7116 SecondaryNameNode
+[root@hadoop102 namesecondary]# pwd
+/opt/module/hadoop-2.7.2/data/tmp/dfs/namesecondary
+
+[root@hadoop100 hadoop-2.7.2]# cd data/tmp/dfs/name/
+[root@hadoop100 name]# scp -r root@hadoop102:/opt/module/hadoop-2.7.2/data/tmp/dfs/namesecondary/* ./   
+[root@hadoop100 name]# 
+```
+
+4. 重新启动NameNode
+```shell script
+[root@hadoop100 name]# cd /opt/module/hadoop-2.7.2/
+[root@hadoop100 hadoop-2.7.2]# sbin/hadoop-daemon.sh start namenode
+starting namenode, logging to /opt/module/hadoop-2.7.2/logs/hadoop-root-namenode-hadoop100.out
+[root@hadoop100 hadoop-2.7.2]# 
+```
+
+
+
+> - 使用-importCheckpoint选项启动NameNode守护进程,从而将SecondaryNameNode目录中
+1. 修改hdfs-site.xml中的
+
+```xml
+<property>
+  <name>dfs.namenode.checkpoint.period</name>
+  <value>120</value>
+</property>
+
+<property>
+  <name>dfs.namenode.name.dir</name>
+  <value>/opt/module/hadoop-2.7.2/data/tmp/dfs/name</value>
+</property>
+
+```
+2. kill -9 NameNode进程
+
+```shell script
+[root@hadoop100 current]# jps
+6881 NodeManager
+7108 NameNode
+7209 DataNode
+7692 Jps
+[root@hadoop100 current]# kill -9 7108
+[root@hadoop100 current]# 
+```
+
+3. 删除NameNode存储的数据(/opt/module/hadoop-2.7.2/data/tmp/dfs/name/*)
+
+```shell script
+[root@hadoop100 hadoop-2.7.2]# rm -rf /opt/module/hadoop-2.7.2/data/tmp/dfs/name/*
+[root@hadoop100 hadoop-2.7.2]# 
+```
+
+4. 如果SecondaryNameNode不和NameNode在一个主机节点上,需要将SecondaryNameNode存储数据的目录拷贝到NameNode存储数据的平级目录,并删除in_use.lock文件
+
+```shell script
+[root@hadoop100 dfs]# ll
+总用量 0
+drwx------. 3 root root 40 5月   3 22:33 data
+drwxr-xr-x. 3 root root 40 5月   3 23:19 name
+[root@hadoop100 dfs]# scp -r root@hadoop102:/opt/module/hadoop-2.7.2/data/tmp/dfs/namesecondary/* ./   
+[root@hadoop100 dfs]# 
+[root@hadoop100 namesecondary]$ rm -rf in_use.lock
+```
+
+5. 导入检查点数据(等待一会ctrl+c结束掉,会自动拉起NameNode)
+
+```shell script
+[root@hadoop100 hadoop-2.7.2]# bin/hdfs namenode -importCheckpoint
+```
+6. 启动NameNode
+```shell script
+[root@hadoop100 hadoop-2.7.2]# sbin/hadoop-daemon.sh start namenode
+```
 
 ### 5.5 集群安全模式
+1. 概述
 
+![概述](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q1iabbKdhOlI5QdsICMxmojFicwFA9JFbSFETblXDWMocHQ61XZfbpUQxCvRHib89nAE81KtC0Xwzyew/0?wx_fmt=png)
 
+2. 基本语法
+
+> 集群处于安全模式,不能执行重要操作(写操作),集群启动完成后,自动退出安全模式.
+> - bin/hdfs dfsadmin -safemode get		(功能描述:查看安全模式状态)
+> - bin/hdfs dfsadmin -safemode enter  	(功能描述:进入安全模式状态)
+> - bin/hdfs dfsadmin -safemode leave	(功能描述:离开安全模式状态)
+> - bin/hdfs dfsadmin -safemode wait	(功能描述:等待安全模式状态)
+
+3. 案例
+
+> 模拟等待安全模式
+> - 查看当前模式
+
+```shell script
+[root@hadoop100 hadoop-2.7.2]# bin/hdfs dfsadmin -safemode get
+Safe mode is OFF
+[root@hadoop100 hadoop-2.7.2]# 
+```
+
+> - 先进入安全模式
+
+```shell script
+[root@hadoop100 hadoop-2.7.2]# bin/hdfs dfsadmin -safemode enter
+Safe mode is ON
+[root@hadoop100 hadoop-2.7.2]# 
+```
+
+> - 创建并执行下面脚本
+
+```shell script
+# 在/opt/module/hadoop-2.7.2 路径下,编辑一个脚本safemode.sh
+[root@hadoop100 hadoop-2.7.2]# bin/hdfs dfsadmin -safemode enter
+Safe mode is ON
+[root@hadoop100 hadoop-2.7.2]# touch safemode.sh
+[root@hadoop100 hadoop-2.7.2]# vi safemode.sh 
+#!/bin/bash
+hdfs dfsadmin -safemode wait
+hdfs dfs -put /opt/module/hadoop-2.7.2/README.txt /
+~
+"safemode.sh" 3L, 93C written
+[root@hadoop100 hadoop-2.7.2]# chmod +x safemode.sh 
+[root@hadoop100 hadoop-2.7.2]# ./safemode.sh 
+#等待中....
+```
+
+> - 再打开一个窗口,执行
+
+```shell script
+[root@hadoop100 hadoop-2.7.2]# bin/hdfs dfsadmin -safemode leave
+Safe mode is OFF
+[root@hadoop100 hadoop-2.7.2]# 
+```
+
+> - 观察
+
+```shell script
+[root@hadoop100 hadoop-2.7.2]# ./safemode.sh 
+
+Safe mode is OFF
+put: `/README.txt': File exists
+[root@hadoop100 hadoop-2.7.2]# 
+```
 
 ### 5.6 NameNode多目录配置
+1. NameNode的本地目录可以配置成多个,且每个目录存放内容相同,增加了可靠性.
+2. 具体配置如下
 
+> - 在hdfs-site.xml文件中增加如下内容
+
+```xml
+ <property>
+    <name>dfs.namenode.name.dir</name>
+    <value>file:///${hadoop.tmp.dir}/dfs/name1,file:///${hadoop.tmp.dir}/dfs/name2</value>
+ </property>
+[root@hadoop100 hadoop-2.7.2]# xsync etc/hadoop/
+```
+
+> - 停止集群,删除data和logs中所有数据
+
+```shell script
+[root@hadoop100 hadoop-2.7.2]# sbin/stop-dfs.sh 
+Stopping namenodes on [hadoop100]
+hadoop100: stopping namenode
+hadoop101: stopping datanode
+hadoop100: stopping datanode
+hadoop102: stopping datanode
+Stopping secondary namenodes [hadoop102]
+hadoop102: stopping secondarynamenode
+[root@hadoop100 hadoop-2.7.2]# jps
+8521 Jps
+
+[root@hadoop101 hadoop-2.7.2]# sbin/stop-yarn.sh 
+stopping yarn daemons
+stopping resourcemanager
+hadoop101: no nodemanager to stop
+hadoop102: no nodemanager to stop
+hadoop100: no nodemanager to stop
+no proxyserver to stop
+[root@hadoop101 hadoop-2.7.2]# jps
+
+[root@hadoop100 hadoop-2.7.2]# rm -fr data/ logs/
+[root@hadoop101 hadoop-2.7.2]# rm -fr data/ logs/
+[root@hadoop102 hadoop-2.7.2]# rm -fr data/ logs/
+```
+
+> - 格式化集群并启动
+
+```shell script
+[root@hadoop100 hadoop-2.7.2]# bin/hdfs namenode -format
+```
+
+> - 查看结果
+
+```shell script
+[root@hadoop100 hadoop-2.7.2]# sbin/start-dfs.sh 
+[root@hadoop100 hadoop-2.7.2]# ll data/tmp/dfs/
+总用量 0
+drwx------. 3 root root 40 5月   4 00:00 data
+drwxr-xr-x. 3 root root 40 5月   4 00:00 name1
+drwxr-xr-x. 3 root root 40 5月   4 00:00 name2
+[root@hadoop100 hadoop-2.7.2]# 
+```
 
 ## 第六章 DataNode(面试开发重点)
 ### 6.1 DataNode工作机制
