@@ -704,6 +704,7 @@ type hadoop-2.7.2.tar.gz.part2 >> hadoop-2.7.2.tar.gz.part1
 > - NameNode将FsImage.chkPoint重新命名为FsImage.
 
 > NN和2NN工作机制详解:
+
 > FsImage:NameNode内存中元数据序列化后形成的文件.<br>
 > Edits:记录客户端更新元数据信息的每一步操作(可通过Edits运算出元数据).<br>
 > NameNode启动时,先滚动Edits并生成一个空的edits.inprogress,然后加载Edits和FsImage到内存中,此时NameNode内存就持有最新的元数据信息,Client开始对NameNode发送元数据的增删改的请求,这些请求就会被记录到edits.inprogress中(查询元数据的操作不会被记录到Edits中,因为查询不会更改元数据信息),如果此时NameNode挂掉,重启后会从Edits中读取元数据的信息,然后NameNode会在内存中执行元数据的增删改的操作.<br>
@@ -715,6 +716,7 @@ type hadoop-2.7.2.tar.gz.part2 >> hadoop-2.7.2.tar.gz.part1
 ### 5.2 FsImage和Edits解析
 1. 概念
 
+![概念](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q1iabbKdhOlI5QdsICMxmojFoOLm8gLjQVo8icNG89vibwR6pqegywpL9ictiaY5HwtTicJv1oRQY09SV4Q/0?wx_fmt=png)
 
 2. oiv查看FsImage文件
 > 查看oiv和oev命令
