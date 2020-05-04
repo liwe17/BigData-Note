@@ -1321,18 +1321,134 @@ hdfs://haoop102:9000/user/atguigu/hello.txt hdfs://hadoop103:9000/user/atguigu/h
 > - 查看归档
 > - 解归档文件
 
+```shell script
+# 启动yarn和准备文件
+[root@hadoop101 hadoop-2.7.2]# sbin/start-yarn.sh 
+[root@hadoop102 hadoop-2.7.2]# hadoop fs -mkdir -p /user/atguigu/input
+[root@hadoop102 hadoop-2.7.2]# cp kongming.txt kongming1.txt 
+[root@hadoop102 hadoop-2.7.2]# cp kongming.txt kongming2.txt 
+[root@hadoop102 hadoop-2.7.2]# hadoop fs -put kongming.txt /user/atguigu/input
+[root@hadoop102 hadoop-2.7.2]# hadoop fs -put kongming1.txt /user/atguigu/input
+[root@hadoop102 hadoop-2.7.2]# hadoop fs -put kongming2.txt /user/atguigu/input
+[root@hadoop102 hadoop-2.7.2]# hadoop fs -ls /user/atguigu/input
+Found 3 items
+-rw-r--r--   3 root supergroup         14 2020-05-04 16:18 /user/atguigu/input/kongming.txt
+-rw-r--r--   3 root supergroup         14 2020-05-04 16:19 /user/atguigu/input/kongming1.txt
+-rw-r--r--   3 root supergroup         14 2020-05-04 16:19 /user/atguigu/input/kongming2.txt
+[root@hadoop102 hadoop-2.7.2]# 
+# 归档文件
+[root@hadoop102 hadoop-2.7.2]# hadoop archive -archiveName input.har -p /user/atguigu/input /user/atguigu/output
+# 查看归档
+[root@hadoop102 hadoop-2.7.2]# hadoop fs -ls /user/atguigu/output/input.har
+Found 4 items
+-rw-r--r--   3 root supergroup          0 2020-05-04 16:21 /user/atguigu/output/input.har/_SUCCESS
+-rw-r--r--   5 root supergroup        296 2020-05-04 16:21 /user/atguigu/output/input.har/_index
+-rw-r--r--   5 root supergroup         23 2020-05-04 16:21 /user/atguigu/output/input.har/_masterindex
+-rw-r--r--   3 root supergroup         42 2020-05-04 16:21 /user/atguigu/output/input.har/part-0
+[root@hadoop102 hadoop-2.7.2]# hadoop fs -ls har:///user/atguigu/output/input.har
+-rw-r--r--   3 root supergroup         14 2020-05-04 16:18 har:///user/atguigu/output/input.har/kongming.txt
+-rw-r--r--   3 root supergroup         14 2020-05-04 16:19 har:///user/atguigu/output/input.har/kongming1.txt
+-rw-r--r--   3 root supergroup         14 2020-05-04 16:19 har:///user/atguigu/output/input.har/kongming2.txt
+[root@hadoop102 hadoop-2.7.2]# 
+# 解归档文件
+[root@hadoop102 hadoop-2.7.2]# hadoop fs -cp har:///user/atguigu/output/input.har/* /
+
+```
 
 ### 7.3 回收站
 
+1. 回收站参数设置及工作机制
+
 ![回收站](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q14FCiakTiccydib1EDVrdlSBicHOibwGZgJRNAGO4Ix7wN7D7czPDYkcDFPGDw3gB8RtMg35tgiaG6SFRQ/0?wx_fmt=png)
 
+2. core-site.xml中启用回收站,设置访问垃圾回收站用户名称,配置垃圾回收时间为1分钟,分发配置文件
+
+```xml
+<configuration>
+    <property>
+        <name>fs.trash.interval</name>
+        <value>1</value>
+    </property>
+    <property>
+        <name>hadoop.http.staticuser.user</name>
+        <value>root</value>
+    </property>
+</configuration>
+```
+
+```shell script
+[root@hadoop102 hadoop]# xsync core-site.xml
+```
+
+3. 查看回收站(删除时候会看见路径)
+4. 通过程序删除的文件不会经过回收站，需要调用moveToTrash()才进入回收站
+
+> - Trash trash = New Trash(conf);
+> - trash.moveToTrash(path);
+
+5. 恢复回收站数据
+
+> hadoop fs -mv 回收站文件路径  待恢复路径
+
+```shell script
+[root@hadoop102 hadoop]# hadoop fs -mv /user/atguigu/.Trash/Current/user/atguigu/input    /user/atguigu/input
+```
+
+6. 清空回收站(类似归档)
+
+```shell script
+[root@hadoop102 hadoop]# hadoop fs -expunge
+```
 
 ### 7.4 快照管理
 
 ![快照](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q14FCiakTiccydib1EDVrdlSBicLq80RQbrylBhV3C7DdA18EicWad1HCicYOC5iaBmFcUhibak3lueoRUwPw/0?wx_fmt=png)
 
+1. 开启/禁用指定目录的快照功能
 
+```shell script
+[root@hadoop102 hadoop-2.7.2]# hdfs dfsadmin -allowSnapshot /user/atguigu/input
+[root@hadoop102 hadoop-2.7.2]# hdfs dfsadmin -disallowSnapshot /user/atguigu/input
+```
 
+2. 对目录创建快照
+
+> 通过web访问hdfs://hadoop100:50070/user/atguigu/input/.snapshot/s…..// 快照和源文件使用相同数据
+
+```shell script
+[root@hadoop102 hadoop-2.7.2]# hdfs dfs -createSnapshot /user/atguigu/input
+[root@hadoop102 hadoop-2.7.2]# hdfs dfs -ls /user/atguigu/input/.snapshot/
+```
+
+3. 指定名称创建快照
+
+```shell script
+[root@hadoop102 hadoop-2.7.2]# hdfs dfs -createSnapshot /user/atguigu/input  miao170508
+```
+
+4. 重命名快照
+
+```shell script
+[root@hadoop102 hadoop-2.7.2]# hdfs dfs -renameSnapshot /user/atguigu/input/  miao170508 atguigu170508
+```
+
+5. 列出当前用户所有可快照目录
+
+```shell script
+[root@hadoop102 hadoop-2.7.2]#  hdfs lsSnapshottableDir
+```
+
+6. 比较两个快照目录的不同之处
+
+```shell script
+[root@hadoop102 hadoop-2.7.2]# hdfs snapshotDiff /user/atguigu/input/  .  .snapshot/atguigu170508
+```
+
+7. 恢复快照
+
+```shell script
+[root@hadoop102 hadoop-2.7.2]# hdfs dfs -cp /user/atguigu/input/.snapshot/s20170708-134303.027 /user
+```
 
 
 
