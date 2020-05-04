@@ -104,9 +104,178 @@
 
 ### 1.8 WordCount案例
 
-1. 需求
+1. 需求:在给定的文本文件中统计输出每一个单词出现的总次数
 
-2. 分析
+> - 输入数据
+
+```text
+atguigu atguigu
+ss ss
+cls cls
+jiao
+banzhang
+xue
+hadoop
+... 详见********hello.txt
+```
+> - 输入数据
+
+```text
+atguigu	2
+banzhang	1
+cls	2
+hadoop	1
+jiao	1
+ss	2
+xue	1
+```
+
+2. 需求分析
+
+> 按照MapReduce编程规范，分别编写Mapper，Reducer，Driver
+
+![分析](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q14FCiakTiccydib1EDVrdlSBiccNG5ciaykpMpSmn9ibl1fglpUvq7icpLG7PYv7iaqVNMdVsD8L2DRtkFEw/0?wx_fmt=png)
+
 
 3. 环境准备
+
+> - 创建maven工程,导入依赖
+> - 编写程序,Mapper类,Reducer类,Driver驱动类
+```text
+Hadoop-Demo项目中com.weiliai.mr.wordcount包
+```
+> - 本地测试,win8电脑和win10家庭版操作系统可能有问题,需要重新编译源码或者更改操作系统
+> - 集群测试
+
+```shell script
+[root@hadoop102 software]# hadoop jar wc.jar com.weiliai.mr.wordcount.WordCountDriver /user/atguigu/input /user/atguigu/output
+[root@hadoop102 software]# hadoop fs -ls /user/atguigu/output
+Found 2 items
+-rw-r--r--   3 root supergroup          0 2020-05-04 21:49 /user/atguigu/output/_SUCCESS
+-rw-r--r--   3 root supergroup         86 2020-05-04 21:49 /user/atguigu/output/part-r-00000
+[root@hadoop102 software]# hadoop fs -cat /user/atguigu/output/part-r-00000
+        1
+aiguigu 1
+atguigu 3
+banzhang        1
+cls     2
+hadoop  3
+jiao    1
+mapreduce       1
+ss      2
+xue     1
+yarn    1
+[root@hadoop102 software]# 
+```
+
+## 第二章 Hadoop序列化
+### 2.1 序列化概述
+#### 2.1.1 什么是序列化
+
+> - 序列化就是把内存中的对象,转化成字节序列(或其他数据传输协议)以便于存储到磁盘(持久化)和网络传输.
+> - 反序列化就是接收到字节序列(或其他数据传输协议)或者是磁盘的持久化数据,转换成内存中的对象.
+
+#### 2.1.2 为什么要序列化
+
+> - 一般来说,"活的"对象只生存在内存里,关机断电就没有了,只能由本地的进程使用,不能被发送到网络上的另外一台计算机.
+> - 序列化可以存储"活的"对象,可以将"活的"对象发送到远程计算机.
+
+#### 2.1.3 为什么不用Java的序列化
+
+> Java的序列化是一个重量级序列化框架(Serializable),一个对象被序列化后,会附带很多额外的信息(各种校验信息,Header,继承体系等),不便于在网络中高效传输,所以Hadoop自己开发了一套序列化机制(Writable).
+
+> Hadoop序列化特点
+> - 紧凑:高效实用存储空间
+> - 快速:读写数据的额外开销小
+> - 可扩展:随着通信协议的升级而可升级
+> - 互操作:支持多语言的交互
+
+### 2.2 自定义bean对象实现序列化接口(Writable)
+
+> 企业开发中往往常用的基本序列化类型不能满足所有需求,比如在Hadoop框架内部传递一个bean对象,那么该对象就需要实现序列化接口.
+
+> 实现Bean对象序列化步骤
+> - 必须实现Writable接口 
+> - 反序列化时,需要反射调用空参构造函数,所以必须有空参构造
+> - 重写序列化方法
+> - 重写反序列化方法
+> - 注意反序列化的顺序和序列化的顺序完全一致
+> - 要想把结果显示在文件中,需要重写toString(),可用"\t"分开,方便后续用
+> - 如果需要将自定义的bean放在key中传输,则还需要实现Comparable接口,因为MapReduce框中的Shuffle过程要求对key必须能排序
+
+### 2.3 序列化案例
+1. 需求:统计每一个手机号耗费的总上行流量,下行流量,总流量
+
+> - 输入数据
+
+```text
+1	13736230513	192.196.100.1	www.atguigu.com	2481	24681	200
+2	13846544121	192.196.100.2			264	0	200
+...详见phone_data.txt
+```
+
+> - 输入数据格式
+
+```text
+id	手机号码		网络ip			上行流量  下行流量     网络状态码
+7 	13560436666	120.196.100.99		1116		 954			200
+```
+
+> - 输出数据格式
+
+```text
+手机号码		    上行流量        下行流量		总流量
+13560436666 		1116		      954 			2070
+```
+
+2. 需求分析
+
+![分析](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q14FCiakTiccydib1EDVrdlSBicv8D56T8Qx0jwVcmGL50PepBfibdiah0iazKU6zOWqT7iaS2crkJeMkR2IQ/0?wx_fmt=png)
+
+3. 编写程序,Mapper类,Reducer类,Driver驱动类
+
+```text
+   Hadoop-Demo项目中com.weiliai.mr.wordcount包
+```
+
+4. 执行程序
+```shell script
+[root@hadoop101 hadoop-2.7.2]# hadoop fs -rm -r  /user/atguigu/input/*
+[root@hadoop101 hadoop-2.7.2]# hadoop fs -rm -r  /user/atguigu/output
+[root@hadoop101 hadoop-2.7.2]# hadoop fs -put wcinput/phone_data.txt /user/atguigu/input/
+[root@hadoop101 hadoop-2.7.2]# hadoop fs -ls /user/atguigu/input/
+Found 1 items
+-rw-r--r--   3 root supergroup       1157 2020-05-04 23:34 /user/atguigu/input/phone_data.txt
+[root@hadoop101 hadoop-2.7.2]#
+[root@hadoop102 software]# hadoop jar fc.jar com.weiliai.mr.flowsum.FlowCountDriver /user/atguigu/input /user/atguigu/output
+[root@hadoop102 software]# hadoop fs -ls /user/atguigu/output
+Found 2 items
+-rw-r--r--   3 root supergroup          0 2020-05-04 23:36 /user/atguigu/output/_SUCCESS
+-rw-r--r--   3 root supergroup        550 2020-05-04 23:36 /user/atguigu/output/part-r-00000
+[root@hadoop102 software]# hadoop fs -cat /user/atguigu/output/part-r-00000
+13470253144     180     180     360
+13509468723     7335    110349  117684
+13560439638     918     4938    5856
+13568436656     3597    25635   29232
+13590439668     1116    954     2070
+13630577991     6960    690     7650
+13682846555     1938    2910    4848
+13729199489     240     0       240
+13736230513     2481    24681   27162
+13768778790     120     120     240
+13846544121     264     0       264
+13956435636     132     1512    1644
+13966251146     240     0       240
+13975057813     11058   48243   59301
+13992314666     3008    3720    6728
+15043685818     3659    3538    7197
+15910133277     3156    2936    6092
+15959002129     1938    180     2118
+18271575951     1527    2106    3633
+18390173782     9531    2412    11943
+84188413        4116    1432    5548
+[root@hadoop102 software]#
+```
+
+
 
