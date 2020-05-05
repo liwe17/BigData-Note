@@ -459,7 +459,7 @@ Number of splits:4
 > - 编写程序,Mapper类,Reducer类,Driver驱动类
 
 ```text
-Hadoop-Demo项目中com.weiliai.mr.nl包
+Hadoop-Demo项目中com.weiliai.mr.nline包
 ```
 
 4. 测试
@@ -500,7 +500,7 @@ part-r-00000
 > - 编写程序,Mapper类,Reducer类,Driver驱动类
 
 ```text
-Hadoop-Demo项目中com.weiliai.mr.包
+Hadoop-Demo项目中com.weiliai.mr.customize包
 ```
 
 4. 测试

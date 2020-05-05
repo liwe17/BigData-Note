@@ -1,4 +1,4 @@
-package com.weiliai.mr.nl;
+package com.weiliai.mr.nline;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
