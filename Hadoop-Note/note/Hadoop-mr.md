@@ -239,6 +239,7 @@ id	手机号码		网络ip			上行流量  下行流量     网络状态码
 ```
 
 4. 执行程序
+
 ```shell script
 [root@hadoop101 hadoop-2.7.2]# hadoop fs -rm -r  /user/atguigu/input/*
 [root@hadoop101 hadoop-2.7.2]# hadoop fs -rm -r  /user/atguigu/output
@@ -359,22 +360,150 @@ org.apache.hadoop.mapreduce.JobSubmitter.submitJobInternal(Job.this, cluster)
 >     - 测试举例:有4个小文件大小分别为1.7M,5.1M,3.4M以及6.8M这四个小文件,则虚拟存储之后形成6个文件块,大小分别为1.7M,(2.55M,2.55M),3.4M以及(3.4M,3.4M),最终会形成3个切片,大小分别为(1.7+2.55)M,(2.55+3.4)M,(3.4+3.4)M
 
 #### 3.1.5 CombineTextInputFormat案例实操
+1. 需求:将输入的大量小文件合并成一个切片统一处理
 
+> - 出入数据:准备4个小文件,大小分别为1.7M,1.7M,3.5M,3.5M
+> - 期望:期望一个切片处理4个文件
+
+2. 实现过程
+
+> - 不做任何处理,运行wordcount案例,切片数为4
+> - 在WordCountDriver中增加代码,运行程序,查看切片数3
+
+```text
+// 特殊处理,改变虚拟存储切片大小
+job.setInputFormatClass(CombineTextInputFormat.class);
+CombineTextInputFormat.setMaxInputSplitSize(job,1024*1024*4); //4M
+``` 
+
+> - 在WordCountDriver中增加代码,运行程序,查看切片数1
+
+```text
+// 特殊处理,改变虚拟存储切片大小
+job.setInputFormatClass(CombineTextInputFormat.class);
+CombineTextInputFormat.setMaxInputSplitSize(job,1024*1024*20); //20M
+``` 
 
 #### 3.1.6 FileInputFormat实现类
 
+![FileInputFormat实现类0](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q2GkRXDPXDGM5QWQaAxiaib6d4ia0EZ1OqpZEE33ia3H8ics0gQbA2fVwnLPFRVdbk20g3Dibws0LrH4fBA/0?wx_fmt=png)
+![FileInputFormat实现类1](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q2GkRXDPXDGM5QWQaAxiaib6doMNlVuru0ia7W8iasdM5fX7wzhWo92eupTJ1VwEHx3EmuQvaFQZx7orQ/0?wx_fmt=png)
+![FileInputFormat实现类2](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q2GkRXDPXDGM5QWQaAxiaib6dNqricdjo7ticbJGcHND3T8ibFelay1k9P3D06PYfSk1ttZfbMZg4kqdhw/0?wx_fmt=png)
+![FileInputFormat实现类3](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q2GkRXDPXDGM5QWQaAxiaib6dnAicaib5Bp6ZKQHIIkvibLSNDEnwsPlORReDXIORGg42k34MQV3SNGA5A/0?wx_fmt=png)
 
 #### 3.1.7 KeyValueTextInputFormat使用案例
+1. 需求:统计文件中每一行第一个单词相同的行数
 
+> - 输入数据
+
+```text
+banzhang ni hao
+xihuan hadoop banzhang
+banzhang ni hao
+xihuan hadoop banzhang
+```
+
+> - 期望结果数据
+
+```text
+banzhang	2
+xihuan	2
+```
+
+2. 需求分析
+
+![KV需求分析](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q2GkRXDPXDGM5QWQaAxiaib6dtPN3A1Rn8lweecslMllBgdtnfakibVgNhVfP0HVNPYFalX0mXppfvng/0?wx_fmt=png)
+
+3. 代码实现
+
+> - 编写程序,Mapper类,Reducer类,Driver驱动类
+
+```text
+Hadoop-Demo项目中com.weiliai.mr.kv包
+```
+
+4. 测试
 
 #### 3.1.8 NLineInputFormat使用案例
 
+1. 需求:对每个单词进行个数统计,要求根据每个输入文件的行数来规定输出多少个切片,3行一切片.
+
+> - 输入数据
+
+```text
+banzhang ni hao
+xihuan hadoop banzhang
+banzhang ni hao
+xihuan hadoop banzhang
+banzhang ni hao
+xihuan hadoop banzhang
+banzhang ni hao
+xihuan hadoop banzhang
+banzhang ni hao
+xihuan hadoop banzhang banzhang ni hao
+xihuan hadoop banzhang
+```
+
+> - 期望输出数据
+
+```text
+Number of splits:4
+```
+
+2. 需求分析
+
+![NLine需求分析](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q2GkRXDPXDGM5QWQaAxiaib6d8eYibLSxzZcRrSJJ4RcU58dj7Y89YtqysdFxMpnxlkVib6pib5UGeAIZA/0?wx_fmt=png)
+
+3. 代码实现
+
+> - 编写程序,Mapper类,Reducer类,Driver驱动类
+
+```text
+Hadoop-Demo项目中com.weiliai.mr.nl包
+```
+
+4. 测试
 
 #### 3.1.9 自定义InputFormat
 
+> 企业开发中,Hadoop框架自带的InputFormat类型不能满足所有应用场景,需要自定义InputFormat来解决实际问题.
+
+> 自定义InputFormat步骤
+> - 自定义一个类继承FileInputFormat
+> - 改写RecordReader,实现一个一次读取一个完整文件封装为K,V
+> - 在输出时使用SequenceFileOutFormat输出合并文件
 
 #### 3.1.10 自定义InputFormat案例实操
 
+> 无论HDFS还是MapReduce,在处理小文件时效率都非常低,但又难免面临处理大量小文件的场景,此时,就需要相应的解决方案,可以自定义InputFormat实现小文件合并
+
+1. 需求:多个小文件合并成一个SequenceFile文件(SequenceFile文件是Hadoop用来存储二进制形式的key-value的文件格式),SequenceFile里面存储多个文件,存储的形式为文件路径+名称为key,文件内容为value.
+
+> - 输入数据
+
+```text
+one.txt two.txt three.txt
+```
+
+> - 期望输出文件格式
+
+```text
+part-r-00000
+```
+
+2. 需求分析
+
+![自定义InputFormat案例分析](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q2GkRXDPXDGM5QWQaAxiaib6dS6lXQ42NKAxtgMgjk7LmiaL1Q0O4glgD3tUPxcDC9szwBB3lWrWC9jA/0?wx_fmt=png)
+
+3. 代码实现
+
+> - 编写程序,Mapper类,Reducer类,Driver驱动类
+
+```text
+Hadoop-Demo项目中com.weiliai.mr.包
+```
+
+4. 测试
 
 ### 3.2 MapReduce工作流程
 
