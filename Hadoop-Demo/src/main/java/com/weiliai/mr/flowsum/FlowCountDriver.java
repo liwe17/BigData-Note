@@ -15,9 +15,13 @@ public class FlowCountDriver {
 
     public static void main(String[] args) throws Exception{
 
+        args = new String[]{"d:/fcinput","d:/fcoutput"};
+
         //1. 获取Job实例,并设置启动jar
         final Job job = Job.getInstance();
         job.setJarByClass(FlowCountDriver.class);
+//        job.setPartitionerClass(ProvincePartitioner.class);
+//        job.setNumReduceTasks(5);
         //2. 关联mapper和reduce
         job.setMapperClass(FlowCountMapper.class);
         job.setReducerClass(FlowCountReducer.class);

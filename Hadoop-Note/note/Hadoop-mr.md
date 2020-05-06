@@ -235,7 +235,7 @@ id	手机号码		网络ip			上行流量  下行流量     网络状态码
 3. 编写程序,Mapper类,Reducer类,Driver驱动类
 
 ```text
-   Hadoop-Demo项目中com.weiliai.mr.wordcount包
+   Hadoop-Demo项目中com.weiliai.mr.flowsum包
 ```
 
 4. 执行程序
@@ -507,8 +507,63 @@ Hadoop-Demo项目中com.weiliai.mr.customize包
 
 ### 3.2 MapReduce工作流程
 
+1. 流程示意图
+
+![流程图1](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q1r2jxcCOCUEUIUMarSCIcibUybfrctN7ic7qEf24O5jia0U9d0R273lkYZMjgzWE4UsZn9x7oJywnZw/0?wx_fmt=png)
+![流程图2](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q1r2jxcCOCUEUIUMarSCIcibFZgtu8TPQVewqKFGN2cAVPXsicVQjmN86a0beqRSWoicm4QBbUSUzCrQ/0?wx_fmt=png)
+
+2. 流程详解
+
+> 上面的流程是整个MapReduce最全工作流程,但是Shuffle过程只是从第7步开始到第16步结束,具体Shuffle过程详解:
+> - MapTask收集到我们的map()方法输出的kv对,放到内存缓冲区
+> - 从内存缓冲区不断溢出本地磁盘文件,可能会溢出多个文件
+> - 多个溢出文件会被合成大的溢出文件
+> - 在溢出及合并的过程中,都要调用partitioner进行分区和针对key进行排序
+> - ReduceTask根据自己的分区号,去各个MapTask机器上取相应的结果分区数据
+> - ReduceTask会取到同一个分区的来自不同MapTask的结果文件,ReduceTask会将这些文件在进行合并(归并排序)
+> - 合成大文件后,shuffle的过程也就结束了,后面进入ReduceTask的逻辑运算过程(从文件中取出一个一个的键值对Group,调用用户自定义reduce()方法)
+
+3. 注意
+
+> Shuffle中的缓冲区大小会影响到MapReduce程序的执行效率,原则上说,缓冲区越大,磁盘io的次数越少,执行速度就越快.
+
+> 缓存区的大小可以通过参数调整,参数:io.sort.mb默认100M
+
+4. 源码解析
 
 ### 3.3 Shuffle机制
+
+#### 3.3.1 Shuffle机制
+> Map方法之后,Reduce方法之前的数据处理过程称之为Shuffle
+
+![Shuffle机制](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q1r2jxcCOCUEUIUMarSCIcibA461JiaDebK58IabwXib5CV3Aq9iby95TvzzzhHWibGOBQEIVDFnSQOvYw/0?wx_fmt=png)
+
+#### 3.3.2 Partition分区
+
+![分区1](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q1r2jxcCOCUEUIUMarSCIcibKtFHtqibC69W4N4yRicEBAzHL87ia2LOVXfqDiccNuiafxFibiblCywdUhadg/0?wx_fmt=png)
+![分区2](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q1r2jxcCOCUEUIUMarSCIciblL1N5dDUJYPibsMcreIoUyV3biaQY4FbCiaib9M88Rpibbgv7cNrlicicXm5A/0?wx_fmt=png)
+![分区3](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q1r2jxcCOCUEUIUMarSCIcibzlwE9f2q9ia4ibglXStH0tpiak6zQMgavCA9fMBN2kwhLAJpJ21FUPUgQ/0?wx_fmt=png)
+
+#### 3.3.3 Partition分区案例实操
+
+1. 需求:将统计结果按照手机归属地不同省份输出到不同文件中(分区)
+
+> 输入数据
+
+```text
+1	13736230513	192.196.100.1	www.atguigu.com	2481	24681	200
+2	13846544121	192.196.100.2			264	0	200
+...详见phone_data.txt
+```
+
+> 期望输出数据
+> - 手机号136,137,138,139开头都分别放到一个独立的4个文件中,其他开头的放到一个文件中.
+
+2．需求分析
+
+![分区案例需求分析](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q1r2jxcCOCUEUIUMarSCIcibtTNOMb8b1gy51CnPq8kms9anhetH4u5lfKbr8iavtsOE3SZtvGwaVbw/0?wx_fmt=png)
+
+3. 在案例2.4的基础上,增加一个分区类
 
 ### 3.4 MapTask工作机制
 
