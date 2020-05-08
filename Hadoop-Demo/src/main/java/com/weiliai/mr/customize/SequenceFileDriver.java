@@ -17,6 +17,8 @@ public class SequenceFileDriver {
 
     public static void main(String[] args) throws Exception{
 
+        args = new String[]{"d:/scinput","d:/scoutput"};
+
         //1. 获取job实例
         Job job = Job.getInstance();
         //2. 设置jar Class,以及附加属性

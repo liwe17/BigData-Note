@@ -565,6 +565,184 @@ Hadoop-Demo项目中com.weiliai.mr.customize包
 
 3. 在案例2.4的基础上,增加一个分区类
 
+```java
+public class ProvincePartitioner extends Partitioner<Text, FlowBean> {
+
+    @Override
+    public int getPartition(Text text, FlowBean flowBean, int numPartitions) {
+
+        //获取key的前三位
+        String preNum = text.toString().substring(0, 3);
+        int partition;
+        switch (preNum) {
+            case "136":
+                partition = 0;
+                break;
+            case "137":
+                partition = 1;
+                break;
+            case "138":
+                partition = 2;
+                break;
+            case "139":
+                partition = 3;
+                break;
+            default:
+                partition = 4;
+        }
+        
+        return partition;
+    }
+}
+```
+
+4. 在驱动函数中增加自定义数据分区设置和ReduceTask设置
+
+```java
+public class FlowCountDriver {
+
+    public static void main(String[] args) throws Exception{
+
+        args = new String[]{"d:/fcinput","d:/fcoutput"};
+
+        //1. 获取Job实例,并设置启动jar
+        final Job job = Job.getInstance();
+        job.setJarByClass(FlowCountDriver.class);
+        job.setPartitionerClass(ProvincePartitioner.class);
+        job.setNumReduceTasks(5);
+        //2. 关联mapper和reduce
+        job.setMapperClass(FlowCountMapper.class);
+        job.setReducerClass(FlowCountReducer.class);
+        //3. 设置map输出
+        job.setMapOutputKeyClass(Text.class);
+        job.setMapOutputValueClass(FlowBean.class);
+        //4. 设置最终输出
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(FlowBean.class);
+        //5. 设置输入输出
+        FileInputFormat.setInputPaths(job,new Path(args[0]));
+        FileOutputFormat.setOutputPath(job,new Path(args[1]));
+        //6. 提交任务
+        System.exit(job.waitForCompletion(true)?0:1);
+    }
+}
+```
+#### 3.3.4 WritableComparable排序
+
+> 排序是MapReduce框架中最重要的操作之一.
+
+> MapTask和ReduceTask均会对数据按照key进行排序,该操作属于Hadoop的默认行为,任何应用程序中数据均会被排序,而不管逻辑上是否需要.
+
+> 默认排序是按照字典顺序排序,且实现该排序的方法的快速排序.
+
+> 对MapTask,它会将处理的结果暂时放到环形缓冲区中,当环形缓冲区使用率达到一定阀值,再对缓冲区的数据进行一次快速排序,并将这些有序数据溢写到磁盘上,而当数据处理完毕后,它会磁盘上所有文件进行归并排序.
+
+> 对于ReduceTask,它从每个MapTask上远程拷贝相应的数据文件,如果文件大小超过一定阀值,则溢写磁盘上,否则存储在内存中,如果磁盘上文件数目达到一定阀值,则进行一次归并排序以生成一个更大文件;如果内存中文件大小或者数据超过一定阀值,则进行一次合并后将数据溢写到磁盘上,当所有数据拷贝完成后,ReduceTask统一对内存和磁盘上的所有数据进行一次归并排序.
+
+1. 排序的分类
+
+> 部分排序
+> - MapReduce根据输入记录的键对数据集排序,保证输出的每个文件内部有序.
+
+> 全排序
+> - 最终输出结果只有一个文件,且文件内部有序,实现方式是只设置了一个ReduceTask,但该方法在处理大型文件时效率低,因为一台机器处理所有文件,完全丧失了MapReduce所提供的并行架构.
+
+> 辅助排序:(GroupingComparator分组)
+> - 在Reduce端对key进行分组,应用于:在接收的key为bean对象时,想让一个或几个字段相同(全部字段比较不相同)的key进行到同一个reduce方法时,可以采用分组排序.
+
+> 二次排序
+> - 在自定义排序过程中,如果compareTo中的判断条件为两个即为二次排序
+
+2. 自定义排序WritableComparable
+
+> 原理分析
+> - bean对象作为key传输,需要实现WritableComparable接口重写compareTo方法,就可以实现排序
+
+#### 3.3.5 WritableComparable排序案例实操(全排序)
+1. 需求:根据案例2.3产生的结果再次对总流量进行排序
+
+> - 输入数据,原始数据第一次处理后的数据
+
+2. 需求分析
+
+![需求分析]()
+
+3. 代码实现
+> - 编写程序,Mapper类,Reducer类,Driver驱动类
+
+```text
+Hadoop-Demo项目中com.weiliai.mr.sort包
+```
+
+ 
+#### 3.3.6 WritableComparable排序案例实操（区内排序）
+
+1. 需求:要求每个省份手机号输出的文件中按照总流量内部排序.
+
+2. 需求分析,基于前一个需求,增加自定义分区类,分区按照省份手机号设置
+
+3. 案例实操
+
+```java
+public class ProvincePartitioner extends Partitioner<FlowBean, Text> {
+
+    @Override
+    public int getPartition(FlowBean flowBean, Text value, int numPartitions) {
+        String preNum = value.toString().substring(0, 3);
+        switch (preNum){
+            case "136":
+                return 0;
+            case "137":
+                return 1;
+            case "138":
+                return 2;
+            case "139":
+                return 3;
+            default:
+                return 4;
+        }
+    }
+}
+
+//
+public class FlowCountSortDriver {
+
+    public static void main(String[] args) throws Exception{
+
+        args = new String[]{"D:\\fcinput2","D:\\fcoutput2"};
+
+        //1. 获取job实例
+        final Job job = Job.getInstance();
+        //2. 设置jobClass
+        job.setJarByClass(FlowCountSortDriver.class);
+        // 加载自定义分区类
+        job.setPartitionerClass(ProvincePartitioner.class);
+        // 设置ReduceTask个数
+        job.setNumReduceTasks(5);
+        //3. 关联mapper和reducer
+        job.setMapperClass(FlowCountSortMapper.class);
+        job.setReducerClass(FlowCountSortReducer.class);
+        //4. 设置mapper输入输出
+        job.setMapOutputKeyClass(FlowBean.class);
+        job.setMapOutputValueClass(Text.class);
+        //5. 设置最终输入输出
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(FlowBean.class);
+        //6. 设置job输入输出路径
+        FileInputFormat.setInputPaths(job,new Path(args[0]));
+        FileOutputFormat.setOutputPath(job,new Path(args[1]));
+        //7. 提交任务
+        System.out.println(job.waitForCompletion(true)?0:1);
+    }
+
+}
+```
+
+#### 3.3.7 Combiner合并
+
+
+
+
 ### 3.4 MapTask工作机制
 
 
