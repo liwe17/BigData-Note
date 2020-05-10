@@ -665,7 +665,7 @@ public class FlowCountDriver {
 
 2. 需求分析
 
-![需求分析]()
+![需求分析](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q2d1qic5ohLjvgVyp3mia9lYyQVqAZBkcVKnOb6ia7aQ6rXeOypicF4CUlXq1hnmrKHQic9iaquHID8wKwA/0?wx_fmt=png)
 
 3. 代码实现
 > - 编写程序,Mapper类,Reducer类,Driver驱动类
@@ -680,6 +680,8 @@ Hadoop-Demo项目中com.weiliai.mr.sort包
 1. 需求:要求每个省份手机号输出的文件中按照总流量内部排序.
 
 2. 需求分析,基于前一个需求,增加自定义分区类,分区按照省份手机号设置
+
+![分区排序案例需求分析](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q2d1qic5ohLjvgVyp3mia9lYy7BTIdtzTxI3WSSjA4icT3Ey1a4XoR3QSlcdQeodlmVZf7caEgs4lXqQ/0?wx_fmt=png)
 
 3. 案例实操
 
@@ -739,6 +741,46 @@ public class FlowCountSortDriver {
 ```
 
 #### 3.3.7 Combiner合并
+
+> Combiner合并
+> - Combiner是MR程序中Mapper和Reducer之外的一种组件.
+> - Combiner组件的父类就是Reducer.
+> - Combiner和Reducer的区别在于运行位置.
+>   - Combiner是在每一个MapTask所在节点运行
+>   - Reducer是在接收全局所有Mapper的输出结果
+> - Combiner的意义就是对每一个MapTask的输出进行局部汇总,以减少网络传输量.
+> - Combiner能够应用的前提是不能影响最终的业务逻辑,而且,Combiner的输出应该根Reducer的输出kv类型要对应起来.
+> - 自定义Combiner实现步骤,继承Reducer类,重写Reducer方法
+
+#### 3.3.8 Combiner合并案例实操
+
+1. 需求:统计过程中对每一个MapTask的输出进行局部汇总,以减少网络传输量采用Combiner功能.
+
+> - 输入数据
+
+```text
+atguigu atguigu
+ss ss
+cls cls
+jiao
+banzhang
+xue
+hadoop
+... 详见hello.txt
+```
+
+> - 期望输出数据
+>   - 期望:Combine输入数据多,输出时经过合并,输出数据降低.
+
+2. 需求分析
+
+![输出分析](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q2d1qic5ohLjvgVyp3mia9lYySmHWG1aQbnKkia4YExdfuSNDiaT235ia2pPvxxibwuic7KWVDZwYOP6022g/0?wx_fmt=png)
+
+3. 代码实现
+
+```text
+Hadoop-Demo项目中com.weiliai.mr.wordcount包
+```
 
 
 

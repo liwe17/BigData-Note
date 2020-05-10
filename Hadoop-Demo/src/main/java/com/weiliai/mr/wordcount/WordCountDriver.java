@@ -15,10 +15,14 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 public class WordCountDriver {
 
     public static void main(String[] args) throws Exception{
+
+        args = new String[]{"D:\\wcinput","D:\\wcoutput"};
+
         //1. 获取Jop,使用默认配置
         final Job job = Job.getInstance();
-        //2. 设置jar加载路径
+        //2. 设置jar加载路径以及配置
         job.setJarByClass(WordCountDriver.class);
+        job.setCombinerClass(WordCountCombiner.class);
         //3. 设置map和reduce
         job.setMapperClass(WordCountMapper.class);
         job.setReducerClass(WordCountReducer.class);
