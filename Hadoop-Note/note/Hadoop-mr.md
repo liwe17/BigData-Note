@@ -782,10 +782,55 @@ hadoop
 Hadoop-Demo项目中com.weiliai.mr.wordcount包
 ```
 
+#### 3.3.9 GroupingComparator分组(辅助排序)
 
+> 对Reduce阶段的数据根据某一个或几个字段进行分组
+
+> 分组排序步骤
+> - 自定义类继承WritableComparator
+> - 重写compare()方法
+> - 创建一个构造将比较对象的类传给父类
+
+#### 3.3.10 GroupingComparator分组案例
+
+1. 需求,有如下订单,现在需要求出每个订单中最贵的商品
+
+> - 输入数据
+
+```text
+订单id	商品id	成交金额
+0000001	Pdt_01	222.8	
+        Pdt_02	33.8
+0000002	Pdt_03	522.8   
+        Pdt_04	122.4
+        Pdt_05	722.4
+0000003	Pdt_06	232.8    
+        Pdt_02	33.8
+
+详见GroupComparator.txt
+```
+
+> - 期望输出数据
+
+```text
+1   222.8
+2   722.4
+3   232.8
+```
+
+2. 需求分析
+
+![求每个订单中最贵的商品](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q2d1qic5ohLjvgVyp3mia9lYyiav0134icclNYOZwyYrXYpHuRE0L2t3LCJPsiaAsuNyicpr588h1deeDIQ/0?wx_fmt=png)
+
+3. 代码实现
+
+```text
+Hadoop-Demo项目中com.weiliai.mr.order包
+```
 
 
 ### 3.4 MapTask工作机制
+
 
 
 ### 3.5 ReduceTask工作机制
