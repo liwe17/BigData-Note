@@ -981,20 +981,280 @@ other.log
 3. 代码实现
 
 
+```text
+Hadoop-Demo项目中com.weiliai.mr.customize.output包
+```
 
 ### 3.7 Join多种应用
-
 #### 3.7.1 Reduce Join
 
-
+> Reduce Join工作原理
+> - Map端的主要工作:为来自不同表或文件的key/value对,打标签以区别不同来源的记录,然后用连接字段作为key,其余部分和新加的标志作为value,最后进行输出.
+> - Reduce端的主要工作:在Reduce端以连接字段作为key的分组已经完成,我们只需要在每一个分组当中将那些来源于不同文件的记录(在Map阶段已经打标志)分开,最后进行合并就ok了.
 
 #### 3.7.2 Reduce Join案例实操
 
+1. 需求:
+
+```text
+order.txt
+```
+
+<table>
+    <tr>
+        <th>id</th>
+        <th>pid</th>
+        <th>amount</th>
+    </tr>
+    <tr>
+        <th>1001</th>
+        <th>01</th>
+        <th>1</th>
+    </tr>
+    <tr>
+        <th>1002</th>
+        <th>02</th>
+        <th>2</th>
+    </tr>
+    <tr>
+        <th>1003</th>
+        <th>03</th>
+        <th>3</th>
+    </tr>
+    <tr>
+        <th>1004</th>
+        <th>01</th>
+        <th>4</th>
+    </tr>
+    <tr>
+        <th>1005</th>
+        <th>02</th>
+        <th>5</th>
+    </tr>
+    <tr>
+        <th>1006</th>
+        <th>03</th>
+        <th>6</th>
+    </tr>
+</table>
+
+```text
+pd.txt
+```
+
+<table>
+    <tr>
+        <th>id</th>
+        <th>pname</th>
+    </tr>
+    <tr>
+         <th>01</th>
+         <th>小米</th>
+    </tr>
+    <tr>
+         <th>02</th>
+         <th>华为</th>
+    </tr>
+    <tr>
+         <th>03</th>
+         <th>格力</th>
+    </tr>
+</table>
+
+> - 将商品信息表中数据根据商品pid合并到订单数据表中
+
+<table>
+    <tr>
+        <th>id</th>
+        <th>panme</th>
+        <th>amount</th>
+    </tr>
+    <tr>
+        <th>1001</th>
+        <th>小米</th>
+        <th>1</th>
+    </tr>
+    <tr>
+        <th>1004</th>
+        <th>小米</th>
+        <th>4</th>
+    </tr>
+    <tr>
+        <th>1002</th>
+        <th>华为</th>
+        <th>2</th>
+    </tr>
+    <tr>
+        <th>1005</th>
+        <th>华为</th>
+        <th>5</th>
+    </tr>
+    <tr>
+        <th>1003</th>
+        <th>格力</th>
+        <th>3</th>
+    </tr>
+    <tr>
+        <th>1006</th>
+        <th>格力</th>
+        <th>6</th>
+    </tr>
+</table>
+
+2. 需求分析
+
+> - 通过将关联条件作为Map输出的key,将两表满足Join条件的数据并携带数据所来源的文件信息,发往同一个ReduceTask,在Reduce中进行数据的串联.
+
+![Reduce端表合并](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q0u688qG1By0Zd0HJduv1ziaMTnQiaWficibRpGKAcTXcEjknXQ128wrRZ6Bial4UBZWy4v1grn5cQFeAg/0?wx_fmt=png)
+
+3. 代码实现
+
+```text
+Hadoop-Demo项目中com.weiliai.mr.table.reducejoin包
+```
 
 #### 3.7.3 Map Join
 
+1. 使用场景
+
+> Map Join 适用于一张表十分小,一张表很大的场景.
+
+2. 优点
+
+> 思考:在Reduce端处理过多的表,非常容易产生数据倾斜,怎么办?
+> - 在Map端缓存多张表,提前处理业务逻辑,这样增加Map端业务,减少Reduce端数据的压力,尽可能减少数据倾斜.
+
+3. 具体办法:采用DistributedCache
+> - 在Mapper的setup阶段,将文件读取到缓存集合中
+> - 在驱动函数中加载缓存
+
+```text
+//缓存普通文件到Task运行节点
+job.addCacheFile(new URI("file:///d:/pd.txt"));
+```
 
 #### 3.7.4 Map Join案例实操
+
+1. 需求:
+
+```text
+order.txt
+```
+
+<table>
+    <tr>
+        <th>id</th>
+        <th>pid</th>
+        <th>amount</th>
+    </tr>
+    <tr>
+        <th>1001</th>
+        <th>01</th>
+        <th>1</th>
+    </tr>
+    <tr>
+        <th>1002</th>
+        <th>02</th>
+        <th>2</th>
+    </tr>
+    <tr>
+        <th>1003</th>
+        <th>03</th>
+        <th>3</th>
+    </tr>
+    <tr>
+        <th>1004</th>
+        <th>01</th>
+        <th>4</th>
+    </tr>
+    <tr>
+        <th>1005</th>
+        <th>02</th>
+        <th>5</th>
+    </tr>
+    <tr>
+        <th>1006</th>
+        <th>03</th>
+        <th>6</th>
+    </tr>
+</table>
+
+```text
+pd.txt
+```
+
+<table>
+    <tr>
+        <th>id</th>
+        <th>pname</th>
+    </tr>
+    <tr>
+         <th>01</th>
+         <th>小米</th>
+    </tr>
+    <tr>
+         <th>02</th>
+         <th>华为</th>
+    </tr>
+    <tr>
+         <th>03</th>
+         <th>格力</th>
+    </tr>
+</table>
+
+> - 将商品信息表中数据根据商品pid合并到订单数据表中
+
+<table>
+    <tr>
+        <th>id</th>
+        <th>panme</th>
+        <th>amount</th>
+    </tr>
+    <tr>
+        <th>1001</th>
+        <th>小米</th>
+        <th>1</th>
+    </tr>
+    <tr>
+        <th>1004</th>
+        <th>小米</th>
+        <th>4</th>
+    </tr>
+    <tr>
+        <th>1002</th>
+        <th>华为</th>
+        <th>2</th>
+    </tr>
+    <tr>
+        <th>1005</th>
+        <th>华为</th>
+        <th>5</th>
+    </tr>
+    <tr>
+        <th>1003</th>
+        <th>格力</th>
+        <th>3</th>
+    </tr>
+    <tr>
+        <th>1006</th>
+        <th>格力</th>
+        <th>6</th>
+    </tr>
+</table>
+
+2. 需求分析
+
+> MapJoin适用于关联表中有小表的情形
+
+![Map端合并案例分析](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q0u688qG1By0Zd0HJduv1zia0syePoatWBNY8nhNic1SrPu1wVg0ia0runSbysFttYp6eT8xvhFGFWXA/0?wx_fmt=png)
+
+3. 代码实现
+
+```text
+Hadoop-Demo项目中com.weiliai.mr.table.mapjoin包
+```
+
+
 
 
 ### 3.8 计数器应用
