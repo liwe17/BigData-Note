@@ -1,4 +1,4 @@
-package com.weiliai.mr.customize;
+package com.weiliai.mr.customize.input;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.BytesWritable;
