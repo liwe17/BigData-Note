@@ -1254,14 +1254,31 @@ pd.txt
 Hadoop-Demo项目中com.weiliai.mr.table.mapjoin包
 ```
 
-
-
-
 ### 3.8 计数器应用
 
+> Hadoop为每个作业维护若干内置计数器,以描述多项指标,例如:某些计数器记录已处理的字节数和记录数,使用户可监控已处理的输入数据量和已产生的输出数据量.
 
+> 计数器API
+> - 采用枚举的方式统计计数
+
+```text
+//对枚举定义的自定义计数器加1
+enum MyCounter(MALFORORMED,NORMAL)
+context.getCounter(MyCounter.MALFORORMED).increment(1);
+```
+
+> - 采用计数器组,计数器名称的方式统计
+
+```text
+组名和计数器名称随便起,但最好有意义
+context.getCounter("counterGroup","counter").increment(1);
+```
+
+> - 计数器结果在程序运行后的控制台上查看
 
 ### 3.9 数据清洗(ETL)
+
+> 在运行核心业务MapReducer程序之前,往往要先对数据进行清洗,清理掉不符合用户要求的数据,清理的过程往往只需要运行Mapper程序,不需要运行Reduce程序.
 
 #### 3.9.1 数据清洗案例实操-简单解析版
 
