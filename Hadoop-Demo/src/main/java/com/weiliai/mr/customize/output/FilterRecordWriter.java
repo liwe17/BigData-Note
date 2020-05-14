@@ -17,7 +17,7 @@ import java.io.IOException;
 /**
  * @Author: Doug Li
  * @Date 2020/5/13
- * @Describe: TODO
+ * @Describe: RecordWriter实现类
  */
 public class FilterRecordWriter extends RecordWriter<Text, NullWritable> {
 

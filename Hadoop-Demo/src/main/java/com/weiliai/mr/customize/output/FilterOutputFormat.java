@@ -11,7 +11,7 @@ import java.io.IOException;
 /**
  * @Author: Doug Li
  * @Date 2020/5/13
- * @Describe: TODO
+ * @Describe: FileOutputFormat自定义实现
  */
 public class FilterOutputFormat extends FileOutputFormat<Text, NullWritable> {
 
