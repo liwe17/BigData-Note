@@ -1369,4 +1369,255 @@ com.weiliai.mr.weblog.complex
 > - 将SequenceFileOutputFormat输出作为后续MapReduce任务的输入,这便是一种好的输出格式,因为它的格式紧凑,容易被压缩.
 > - 用户还可以自定义OutputFormat
 
+## 第四章 Hadoop数据压缩
+
+### 4.1 概述
+
+> 压缩概述
+> - 压缩技术能够有效减少底层存储系统(HDFS)读写字节数,压缩提供了网络带宽和磁盘空间的效率,在运行MR程序时,I/O操作,网络数据传输,Shuffle和Merge要花费大量时间,尤其是数据规模很大和工作负载密集的情况下,因此,使用数据压缩显得很重要.
+> - 鉴于磁盘I/O和网络带宽是Hadoop的宝贵资源,数据压缩对于节省资源,最小化磁盘I/O和网络传输非常有帮助,可以在任意MapReduce阶段启用压缩,不过,尽管压缩与解压操作的CPU开销不高,其性能的提升和资源你的节省并非没有代价.
+
+> 压缩策略和原则
+> - 压缩是提高Hadoop运行效率的一种优化策略.
+> - 通过对Mapper,Reducer运行过程的数据进行压缩,以减少磁盘IO,提高MR程序运行速度.
+> - 注意:采用压缩技术减少了磁盘IO,但同时增加了CPU运算负担,所以压缩特性运用得当能提高性能,但运用不当也可能降低性能.
+
+> 压缩基本原则
+> - 运算密集型的job,少用压缩.
+> - IO密集型的job,多用压缩.
+
+### 4.2 MR支持的压缩编码
+
+<table>
+    <tr>
+        <th>压缩格式</th>
+        <th>hadoop自带</th>
+        <th>算法</th>
+        <th>文件扩展名</th>
+        <th>是否可以切分</th>
+        <th>换成压缩格式后,原来的程序是否需要修改</th>
+    </tr>
+    <tr>
+        <th>DEFLATE</th>
+        <th>是,直接使用</th>
+        <th>DEFLATE</th>
+        <th>.deflate</th>
+        <th>否</th>
+        <th>和文本处理一样,不需要修改</th>
+    </tr>
+    <tr>
+        <th>Gzip</th>
+        <th>是,直接使用</th>
+        <th>DEFLATE</th>
+        <th>.gz</th>
+        <th>否</th>
+        <th>和文本处理一样,不需要修改</th>
+    </tr>
+    <tr>
+        <th>bzip2</th>
+        <th>是,直接使用</th>
+        <th>bzip2</th>
+        <th>.bz2</th>
+        <th>是</th>
+        <th>和文本处理一样,不需要修改</th>
+    </tr>
+    <tr>
+        <th>LZO</th>
+        <th>否,需要安装</th>
+        <th>LZO</th>
+        <th>.lzo</th>
+        <th>是</th>
+        <th>需要创建索引,还需要指定输入格式</th>
+    </tr>
+    <tr>
+        <th>Snappy</th>
+        <th>否,需要安装</th>
+        <th>Snappy</th>
+        <th>.snappy</th>
+        <th>否</th>
+        <th>和文本处理一样,不需要修改</th>
+    </tr>
+</table>
+
+> 为了支持多种压缩/解压缩算法,Hadoop引入了编码/解码器,如下表示.
+
+<table>
+    <tr>
+        <th>压缩格式</th>
+        <th>对应的编码/解码器</th>
+    </tr>
+    <tr>
+        <th>DEFLATE</th>
+        <th>org.apache.hadoop.io.compress.DefaultCodec</th>
+    </tr>
+    <tr>
+        <th>gzip</th>
+        <th>org.apache.hadoop.io.compress.GzipCodec</th>
+    </tr>
+    <tr>
+        <th>bzip2</th>
+        <th>org.apache.hadoop.io.compress.BZip2Codec</th>
+    </tr>
+    <tr>
+        <th>LZO</th>
+        <th>org.hadoop.compression.lzo.LzopCodec</th>
+    </tr>
+    <tr>
+        <th>Snappy</th>
+        <th>org.apache.hadoop.io.compress.SnappyCodec</th>
+    </tr>
+</table>
+
+> 压缩性能的比较
+
+<table>
+    <tr>
+        <th>压缩算法</th>
+        <th>原始文件大小</th>
+        <th>压缩文件大小</th>
+        <th>压缩速度</th>
+        <th>解压速度</th>
+    </tr>
+    <tr>
+        <th>gzip</th>
+        <th>8.3G</th>
+        <th>1.8G</th>
+        <th>17.5MB/s</th>
+        <th>58MB/s</th>
+    </tr>
+    <tr>
+        <th>bzip2</th>
+        <th>8.3G</th>
+        <th>1.1G</th>
+        <th>2.4MB/s</th>
+        <th>9.5MB/s</th>
+    </tr>
+    <tr>
+        <th>LZO</th>
+        <th>8.3G</th>
+        <th>2.9G</th>
+        <th>49.3MB/s</th>
+        <th>74.6MB/s</th>
+    </tr>
+</table>
+
+> http://google.github.io/snappy/
+> - on a single core of a core i7 processor in 64-bit mode,Snappy compresses at about 250M/sec or more and decompresses at about 500MB/sec or more.
+
+### 4.3 压缩方式的选择
+#### 4.3.1 Gzip压缩
+
+> - 优点:压缩率比较高,而且压缩/解压速度也比较快;Hadoop本身支持,在应用中处理Gzip格式的文件和直接处理文本一样,大部分Linux系统都自带Gzip命令,使用方便.
+> - 缺点:不支持Split
+
+> 应用场景:当每个文件压缩之后在130M以内的(1个块大小内),都可以考虑Gzip压缩格式,例如一天或一个小时的日志压缩成一个Gzip文件.
+
+#### 4.3.2 Bzip2压缩
+
+> - 优点:支持Split;具有很高的压缩率,比Gzip压缩率都高;Hadoop本身自带,使用方便.
+> - 缺点:压缩/解压速度慢.
+
+> 应用场景:适合对速度要求不高,但需要较高的压缩率的时候;或者输出之后的数据比较大,处理之后的数据需要压缩存档减少磁盘空间并且以后数据用的比较少的情况;或者对单个很大的文本文件想压缩减少存储空间,同时有需要支持split,而且兼容之前的应用程序的情况.
+
+#### 4.3.3 Lzo压缩
+
+> - 优点:压缩/解压速度比较快,合理的压缩率;支持split,是Hadoop中最流行的压缩格式;可以在linux系统下安装lzop命令,使用方便.
+> - 缺点:压缩率比Gzip低一些;Hadoop本身不支持,需要安装;在应用中对Lzo格式的文件需要做一些特殊处理(为了支持split需要建索引,还需要指定InputFormat为Lzo格式)
+
+> 应用场景:一个很大的文本文件,压缩之后还大于200M以上的可以考虑,而且单个文件越大,Lzo优点越明显.
+
+#### 4.3.4 Snappy压缩
+
+> - 优点:高速压缩速度和合理的压缩率
+> - 缺点:不支持split;压缩率比Gzip要低;Hadoop本身不支持,需要安装.
+
+> 应用场景:当MapReduce作业的Map输出的数据比较大的时候,作为Map到Reduce的中间数据的压缩格式;或者作为一个MapReduce作业的输出和另外一个MapReduce作业的输入.
+
+### 4.4 压缩位置的选择
+
+> 压缩可以在MapReduce作用的任意阶段启用:
+
+![MapReduce数据压缩](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q1qP2yWp45XKkSOXic6DicicqV7GAW9d8Nb34sWTJHNP6ibNuOcTrr9kIKewGdSiaQlVElauicAEWjuFkUA/0?wx_fmt=png)
+
+### 4.5 压缩参数配置
+
+<table>
+    <tr>
+        <th>参数</th>
+        <th>默认值</th>
+        <th>阶段</th>
+        <th>建议</th>
+    </tr>
+    <tr>
+        <th>io.compression.codecs<br>在core-site.xml中配置</th>
+        <th>org.apache.hadoop.io.compress.DefaultCodec<br>org.apache.hadoop.io.compress.GzipCodec<br>org.apache.hadoop.io.compress.BZip2Codec</th>
+        <th>输入压缩</th>
+        <th>Hadoop使用文件扩展名判断是否支持某种编码解码器</th>
+    </tr>
+    <tr>
+        <th>mapreduce.map.output.compress<br>在mapred-site.xml配置</th>
+        <th>false</th>
+        <th>mapper输出</th>
+        <th>这个参数设为true启用压缩</th>
+    </tr>
+    <tr>
+        <th>mapreduce.map.output.compress.codec<br>在mapred-site.xml配置</th>
+        <th>org.apache.hadoop.io.compress.DefaultCodec</th>
+        <th>mapper输出</th>
+        <th>企业多使用LZO或Snappy编解码器在此阶段压缩数据</th>
+    </tr>
+    <tr>
+        <th>mapreduce.output.fileoutputformat.compress<br>在mapred-site.xml配置</th>
+        <th>false</th>
+        <th>reducer输出</th>
+        <th>这个参数设为true启用压缩</th>
+    </tr>
+    <tr>
+        <th>mapreduce.output.fileoutputformat.compress.codec<br>在mapred-site.xml配置</th>
+        <th>org.apache.hadoop.io.compress.DefaultCodec</th>
+        <th>reducer输出</th>
+        <th>使用标准工具或者编解码器,如gzip和bzip2</th>
+    </tr>
+    <tr>
+        <th>mapreduce.output.fileoutputformat.compress.type<br>在mapred-site.xml配置</th>
+        <th>RECORD</th>
+        <th>reducer输出</th>
+        <th>SequenceFile输出使用的压缩类型:NONE和BLOCK</th>
+    </tr>
+</table>
+
+### 4.6 压缩实操案例
+#### 4.6.1 数据流的压缩和解压缩
+
+> CompressionCodec有两个方法可以用于轻松地压缩或解压缩数据
+> - 要想对正在被写入一个输出流的数据进行压缩,我们可以使用createOutputStream(OutputStreamOut)方法创建一个CompressionOutputStream,将其以压缩格式写入底层的流.
+> - 相反,要想从输入流读取而来的数据进行解压缩,则调用createInputStream(InputStreamIn)函数,从而获得一个CompressionInputStream,从而从底层的流读取未压缩的数据.
+
+> 测试压缩方式
+
+<table>
+    <tr>
+        <th>DEFLATE</th>
+        <th>org.apache.hadoop.io.compress.DefaultCodec</th>
+    </tr>
+    <tr>
+        <th>gzip</th>
+        <th>org.apache.hadoop.io.compress.GzipCodec</th>
+    </tr>
+    <tr>
+        <th>bzip2</th>
+        <th>org.apache.hadoop.io.compress.BZip2Codec</th>
+    </tr>
+</table>
+
+```text
+com.weiliai.mr.compress
+```
+
+#### 4.6.2 Map输出端采用压缩
+
+
+
+#### 4.6.3 Reduce输出端采用压缩
+
 
