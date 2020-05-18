@@ -706,7 +706,6 @@ public class ProvincePartitioner extends Partitioner<FlowBean, Text> {
     }
 }
 
-//
 public class FlowCountSortDriver {
 
     public static void main(String[] args) throws Exception{
@@ -1282,10 +1281,92 @@ context.getCounter("counterGroup","counter").increment(1);
 
 #### 3.9.1 数据清洗案例实操-简单解析版
 
+> 1.需求:去除日志中字段长度小于11的日志
+
+> - 输入数据
+
+```text
+194.237.142.21 - - [18/Sep/2013:06:49:18 +0000] "GET /wp-content/uploads/2013/07/rstudio-git3.png HTTP/1.1" 304 0 "-" "Mozilla/4.0 (compatible;)"
+183.49.46.228 - - [18/Sep/2013:06:49:23 +0000] "-" 400 0 "-" "-"
+163.177.71.12 - - [18/Sep/2013:06:49:33 +0000] "HEAD / HTTP/1.1" 200 20 "-" "DNSPod-Monitor/1.0"
+...详见web.log
+```
+
+> - 期望输出数据: 每行字段长度都大于11
+
+2. 在map阶段对输入的数据根据规则过滤清洗
+
+3. 代码实现
+
+```text
+com.weiliai.mr.weblog.simple
+```
 
 #### 3.9.2 数据清洗案例实操-复杂解析版
 
+1. 对web访问日志中的各字段识别切分,去除日志汇总不合法的记录,根据清洗规则,输出过滤后的数据.
+
+> - 输入数据
+
+```text
+194.237.142.21 - - [18/Sep/2013:06:49:18 +0000] "GET /wp-content/uploads/2013/07/rstudio-git3.png HTTP/1.1" 304 0 "-" "Mozilla/4.0 (compatible;)"
+183.49.46.228 - - [18/Sep/2013:06:49:23 +0000] "-" 400 0 "-" "-"
+163.177.71.12 - - [18/Sep/2013:06:49:33 +0000] "HEAD / HTTP/1.1" 200 20 "-" "DNSPod-Monitor/1.0"
+...详见web.log
+```
+> - 期望输出数据: 都是合法数据
+
+2. 代码实现
+
+```text
+com.weiliai.mr.weblog.complex
+```
 
 ### 3.10 MapReduce开发总结
+
+> 在编写MapReduce程序时,需要考虑如下几个方面:
+
+1. 输入输出数据接口: InputFormat
+
+> - 默认使用的实现类是TextInputFormat.
+> - TextInputFormat的功能逻辑是:一次读一行文本,然后将该行的起始偏移量作为key,行内容作为value返回.
+> - KeyValueTextInputFormat:每一行均为一条记录,被分隔符分割为key,value,默认分隔符是tab(\t)
+> - NlineInputFormat按照指定的行数来进行切片
+> - CombineTextInputFormat可以把多个小文件合并成一个切片处理,提高处理效率
+> - 用户还可以自定义InputFormat
+
+2. 逻辑处理接口:Mapper
+
+> - 用户根据业务需求实现其中三个方法:map(),setup(),cleanup();
+
+3. Partitioner分区
+
+> - 有默认实现HashPartitioner,逻辑是根据key的哈希值和numReduces来返回一个分区号;key.hashCode()&Integer.MAXVALUE%numReduces
+> - 如果业务有特别要求,可以自定义分区
+
+4. Comparable排序
+
+> - 当我们自定义的对象作为key来输出时,就必须要实现WritableComparable接口,重写其中compareTo()方法.
+> - 部分排序:对最终输出的每一个文件进行内部排序.
+> - 全排序:对所有数据进行排序,通常只有一个Reduce.
+> - 二次排序:排序的条件有两个.
+
+5. Combiner合并
+
+> - Combiner合并可以提高程序执行效率,减少IO传输,但是使用时必须不能影响原有业务处理结果.
+
+6. Reduce端分组:GroupingComparator
+
+> - 在Reduce端对key进行分组,应用于:在接收key为bean对象时,想让一个或几个字段相同(全部字段比较不同)的key进行到同一个reduce方法时,可以采用分组排序.
+
+7. 逻辑处理接口:Reducer
+
+> - 用户根据业务需求实现其中三个方法:reduce(),setup(),cleanup();
+
+8. 输出数据接口:OutputFormat
+
+> - 默认实现类是TextOutPutFormat,功能逻辑是:将每一个KV,向目标文件输出一行.
+> - 将SequenceFileOutputFormat输出作为后续MapReduce任务的输入,这便是一种好的输出格式,因为它的格式紧凑,容易被压缩.
+> - 用户还可以自定义OutputFormat
 
 

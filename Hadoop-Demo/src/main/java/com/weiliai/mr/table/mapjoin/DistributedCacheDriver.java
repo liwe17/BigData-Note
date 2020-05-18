@@ -34,9 +34,7 @@ public class DistributedCacheDriver {
         job.setNumReduceTasks(0);
         //3. 关联Mapper
         job.setMapperClass(DistributedCacheMapper.class);
-        //4. 设置mapper输入输出
-        job.setMapOutputKeyClass(Text.class);
-        job.setMapOutputValueClass(NullWritable.class);
+        //4. 设置mapper/reducer输入输出
         //5. 设置输入输出
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(NullWritable.class);
