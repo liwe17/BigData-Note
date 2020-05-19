@@ -1616,8 +1616,179 @@ com.weiliai.mr.compress
 
 #### 4.6.2 Map输出端采用压缩
 
+> 即使你的MapReduce的输入输出文件都是未压缩的文件,你仍然可以对Map任务的中间结果输出做压缩,因为它要写在硬盘并且通过网络传输到Reduce节点,对其压缩可以提供很多性能.
 
+> - 只需要修改Driver,无需修改Mapper和Reducer
+
+```text
+//开启map端输出压缩
+configuration.setBoolean("mapreduce.map.output.compress",true);
+//设置map端输出压缩方式
+configuration.setClass("mapreduce.map.output.compress.codec",BZip2Codec.class,CompressionCodec.class);
+```
+
+> - 代码实现
+
+```text
+com.weiliai.mr.wordcount.WordCountDriver
+```
 
 #### 4.6.3 Reduce输出端采用压缩
 
+> 基于WordCount案例处理
 
+> - 只需要修改Driver,无需修改Mapper和Reducer
+
+```text
+   //设置reduce端输出压缩开启
+   FileOutputFormat.setCompressOutput(job,true);
+   //设置压缩方式
+   FileOutputFormat.setOutputCompressorClass(job,BZip2Codec.class);
+// FileOutputFormat.setOutputCompressorClass(job, GzipCodec.class);
+// FileOutputFormat.setOutputCompressorClass(job, DefaultCodec.class);
+```
+
+## 第五章 Yarn资源调度器
+
+> Yarn是一个资源调度平台,负责为运算程序提供服务器运算资源,相当于一个分布式的操作系统平台,而MapReduce等运算程序则相当于运行与操作系统之上的应用程序
+
+### 5.1 Yarn基本架构
+
+> Yarn 主要有 ResourceManager,NodeManger,ApplicationMaster和Container等组件构成.
+
+![Yarn架构]()
+
+
+### 5.2 Yarn的工作机制
+
+1. Yarn运行机制
+
+![Yarn工作机制]()
+
+2. 工作机制详解
+
+> - MR程序提交到客户端所在的节点
+> - YarnRunner向ResourceManager申请一个Application
+> - RM将该应用程序的资源路径返回给YarnRunner
+> - 该程序将运行所需资源提交到HDFS上
+> - 程序资源提交完毕后,申请运行mrAppMaster
+> - RM将用户的请求初始化一个Task
+> - 其中一个NodeManager领取到Task任务
+> - 该NodeManager创建容器Container,并产生MRAppmaster
+> - Container从HDFS上拷贝资源到本地
+> - MRAppmaster向RM申请运行MapTask资源
+> - RM将运行MapTask任务分配给另外两个NodeManager,另两个NodeManager分别领取任务并创建容器
+> - MR向两个接受到任务的NodeManager发送程序启动脚本,这两个NodeManager分别启动MapTask,MapTask对数据分区排序
+> - MrAppMaster等待所有MapTask运行完毕后,向RM申请容器,运行ReduceTask
+> - ReduceTask向MapTask获取相应分区的数据
+> - 程序运行完毕后,MR会向RM申请注销自己
+
+### 5.3 作业提交全过程
+
+1. 作业提交过程之Yarn
+
+![作业提交yarn]()
+
+> 提交过程详解
+
+> 1) 作业提交
+> - Client调用job.waitForCompletion()方法,向整个集群提交MapReduce作业
+> - Client向RM申请一个作业id
+> - RM给Client返回该job资源的提交路径和作业id
+> - Client提交jar包,切片信息和配置文件到指定的资源提交路径
+> - Client提交完资源后,向RM申请运行MrAppMaster
+
+> 2) 作业初始化
+> - 当RM收到Client的请求后,将该job添加到容量调度器中
+> - 某一个空闲的NM领取到该Job
+> - 该NM创建Container,并产生MRAppmaster
+> - 下载Client提交的资源到本地
+
+> 3) 任务分配
+> - MrAppMaster向RM申请运行多个MapTask任务资源
+> - RM将运行MapTask任务分配给另外两个NodeManager,另外两个NodeManager分别领取任务并创建容器
+
+> 4) 任务运行
+> - MR向两个接受到任务的NodeManager发送程序启动脚本,这两个NodeManager分别启动MapTask,MapTask对数据分区排序
+> - MrAppMaster等待所有MapTask运行完毕后,向RM申请容器,运行ReduceTask
+> - ReduceTask向MapTask获取相应分区的数据
+> - 程序运行完毕后,MR会向RM申请注销自己
+
+> 5) 进度和状态更新
+> - YARN中的任务将其进度和状态(包括counter)返回给应用管理器,客户端每秒(通过mapreduce.client.progressmonitor.pollinterval设置)向应用管理器请求进度更新,展示给用户
+
+> 6) 作业完成
+> - 除了向应用管理器请求作业进度外,客户端每5秒会通过调用waitForCompletion()来检查作业是否完成,时间间隔可以通过mapreduce.client.completion.pollinterval设置,作业完成之后,应用管理器和Container会清理工作状态,作业的信息会被作业历史服务器存储,以备之后用户检查
+
+2. 作业提交过程之MapReduce
+
+![作业提交MapReduce]()
+
+
+### 5.4 资源调度器
+
+> 目前Hadoop作业调度器主要有三种:FIFO,Capacity Scheduler和Fair Scheduler,Hadoop2.7.2默认的资源调度器是Capacity Scheduler
+
+> 具体设置,详见yarn-default.xml文件
+
+```xml
+<property>
+    <description>The class to use as the resource scheduler</description>
+    <name>yarn.resourcemanager.scheduler.class</name>
+    <value>org.apache.hadoop.yarn.server.resourcemanager.scheduler.capacity.CapacityScheduler</value>
+</property>
+``` 
+
+1. 先进先出调度器(FIFO)
+
+![先进先出调度器]()
+
+2. 容器调度器(Capacity Scheduler)
+
+![容器调度器]()
+
+3. 公平调度器(Fair Scheduler)
+
+![公平调度器]()
+
+### 5.5 任务的推测执行
+
+1. 作业完成时间取决于最慢的任务完成时间
+
+> - 一个作业有若干Map任务和Reduce任务构成,因硬件老化,软件Bug等,某些任务可能运行非常慢
+> - 思考:系统种有99%的Map任务都完成了,只有少数几个Map老是运行进度很慢,完不成,怎么办?
+
+2. 推测机制
+
+> - 发现拖后腿的任务,比如某个任务运行速度远慢于任务平均速度,为拖后腿任务启动一个备份任务,同时运行,谁先运行完,采用谁的结果
+
+3. 执行推测任务的前提条件
+
+> - 每个Task都只能有一个备份任务
+> - 当前Job已完成的Task必须不小于0.05(5%)
+> - 开启推测执行参数设置,mapred-site.xml文件中默认是打开的
+
+```text
+<property>
+  	<name>mapreduce.map.speculative</name>
+  	<value>true</value>
+  	<description>If true, then multiple instances of some map tasks may be executed in parallel.</description>
+</property>
+<property>
+  	<name>mapreduce.reduce.speculative</name>
+  	<value>true</value>
+  	<description>If true, then multiple instances of some reduce tasks may be executed in parallel.</description>
+</property>
+
+```
+
+4. 不能启用推测执行机制情况
+
+> - 任务间存在严重的负载倾斜
+> - 特殊任务,比如任务向数据库中写数据
+
+5. 算法原理
+
+![推测算法原理]()
+
+## 第六章 Hadoop企业优化
