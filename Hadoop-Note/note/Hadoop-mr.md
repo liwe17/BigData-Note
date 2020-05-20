@@ -1986,4 +1986,23 @@ com.weiliai.mr.wordcount.WordCountDriver
 > - JVM重用原理:一个Map运行在一个JVM上,开启重用的话,该Map在JVM上运行完毕后,JVM继续运行其他Map
 > - 具体设置:mapreduce.job.jvm.numtasks值在10-20之间.
 
+## 第七章 MapReduce扩展案例
+### 7.1 倒排索引案例-多job串联
+
+
+
+### 7.2 TopN案例
+
+
+
+
+### 7.3 找博客共同好友案例
+
+
+
+
+## 第八章 常见错误及解决方案
+
+
+
 
