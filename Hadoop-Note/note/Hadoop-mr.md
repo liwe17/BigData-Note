@@ -1656,14 +1656,14 @@ com.weiliai.mr.wordcount.WordCountDriver
 
 > Yarn 主要有 ResourceManager,NodeManger,ApplicationMaster和Container等组件构成.
 
-![Yarn架构]()
+![Yarn架构](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q2qjO3sBlmGzpR1H0ILuG0tXWR9Hibml2nEloibFL2ev47nLoMcDatfabnJJOL1s6RMSLBJGK4fSQbQ/0?wx_fmt=png)
 
 
 ### 5.2 Yarn的工作机制
 
 1. Yarn运行机制
 
-![Yarn工作机制]()
+![Yarn工作机制](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q2qjO3sBlmGzpR1H0ILuG0tvicVDJGw5YHwHFIMmCzgsSN3K1bLUcxLkKSIq9ScZ0Nc1I4TRmXADvg/0?wx_fmt=png)
 
 2. 工作机制详解
 
@@ -1687,7 +1687,7 @@ com.weiliai.mr.wordcount.WordCountDriver
 
 1. 作业提交过程之Yarn
 
-![作业提交yarn]()
+![作业提交yarn](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q2qjO3sBlmGzpR1H0ILuG0tvicVDJGw5YHwHFIMmCzgsSN3K1bLUcxLkKSIq9ScZ0Nc1I4TRmXADvg/0?wx_fmt=png)
 
 > 提交过程详解
 
@@ -1722,7 +1722,7 @@ com.weiliai.mr.wordcount.WordCountDriver
 
 2. 作业提交过程之MapReduce
 
-![作业提交MapReduce]()
+![作业提交MapReduce](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q2qjO3sBlmGzpR1H0ILuG0tvNCkTybUYZL1h6TGUNKUzsyTu5sJgu2YT1jgKEvkEZ1jY4Hm9PXV4Q/0?wx_fmt=png)
 
 
 ### 5.4 资源调度器
@@ -1741,15 +1741,15 @@ com.weiliai.mr.wordcount.WordCountDriver
 
 1. 先进先出调度器(FIFO)
 
-![先进先出调度器]()
+![先进先出调度器](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q2qjO3sBlmGzpR1H0ILuG0tbMliaicN3SgJq4dU5YBMcRblDaMDGjPoPicsYxawnO348jkqj3atLOq5g/0?wx_fmt=png)
 
 2. 容器调度器(Capacity Scheduler)
 
-![容器调度器]()
+![容器调度器](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q2qjO3sBlmGzpR1H0ILuG0t2ejS8CBOwjEgjtYUdibIibTuc6iaMOw734icHXvdVf0xxAC3wSsnzu707w/0?wx_fmt=png)
 
 3. 公平调度器(Fair Scheduler)
 
-![公平调度器]()
+![公平调度器](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q2qjO3sBlmGzpR1H0ILuG0t3ejPrTce9jDBBzxeNWyBTicq3Vx9oVibSEOyALRUywt5gtRaPLDledUQ/0?wx_fmt=png)
 
 ### 5.5 任务的推测执行
 
@@ -1789,6 +1789,201 @@ com.weiliai.mr.wordcount.WordCountDriver
 
 5. 算法原理
 
-![推测算法原理]()
+![推测算法原理](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q2qjO3sBlmGzpR1H0ILuG0tPVXAZ5WlxvXticIiaQsgcn5oYrc8n3wB5MzyBb4SbGYKDoyiaTibmV3tpQ/0?wx_fmt=png)
 
 ## 第六章 Hadoop企业优化
+
+### 6.1 MapReduce 跑得慢的原因
+
+> MapReduce 程序效率的瓶颈在于两点
+
+1. 计算机性能
+
+> - CPU,内存,磁盘健康,网络
+
+2. I/O操作优化
+
+> - 数据倾斜
+> - Map和Reduce数设置不合理
+> - Map运行时间太长,导致Reduce等待过久
+> - 小文件过多
+> - 大量的不可分块的超大文件
+> - Spill次数过多
+> - Merge次数过多
+
+### 6.2 MapReduce 优化方法
+
+> MapReduce优化方法主要从六个方面考虑:数据输入,Map阶段,Reduce阶段,IO传输,数据倾斜问题和常用的调优参数
+
+#### 6.2.1 数据输入
+
+> MapReduce优化方法
+> - 合并小文件:在执行MR任务前将小文件进行合并,大量的小文件会产生大量的Map任务,增大Map任务装载次数,而任务的装载比较耗时,从而导致MR运行较慢.
+> - 采用CombineTextInputFormat来作为输入,解决输入端大量小文件场景.
+
+#### 6.2.2 Map阶段
+
+> Map阶段
+> - 减少溢写(Spill)次数:通过调整io.sort.mb及sort.spill.percent参数值,增大触发Spill的内存上限,减少Spill次数,从而减少磁盘IO.
+> - 减少合并(Merge)次数:通过调整io.sort.factor参数,增大Merge的文件数目,减少Merge的次数,从而缩短MR处理时间.
+> - 在Map之后,不影响业务逻辑前提下,先进行Combine处理,减少I/O.
+
+#### 6.2.3 Reduce阶段
+
+> Reduce阶段
+> - 合理设置Map和Reduce数:两个都不能设置太少,也不能设置太多,太少会导致Task等待,延长处理时间;太多,会导致Map,Reduce任务间竞争资源,造成处理超时等错误.
+> - 设置Map,Reduce共存:调整slowstart.competedmaps参数,使Map运行到一定程度后,Reduce也开始运行,减少Reduce的等待时间.
+> - 规避使用Reduce:因为Reduce在用于连接数数据集的时候将会产生大量的网络消耗.
+> - 合理设置Reduce端的Buffer:默认情况下,数据达到一个阀值的时候,Buffer中的数据就会写入磁盘,然后Reduce会从磁盘中获取所有的数据,也就是说,Buffer和Reduce是没有直接关联,中间多次写磁盘>读盘的过程,既然有这个弊端,那么就可以通过参数来配置,使得Buffer中的一部分数据可以直接输送到Reduce,从而减少IO开销
+>   - mapreduce.reduce.input.buffer.percent,默认为0.0,当值大于0的时候,会保留指定比例的内存读Buffer中的数据直接拿给Reduce使用,这样一来,设置Buffer需要内存,读取数据需要内存,Reduce计算也要内存,所以根据作业的运行情况进行调整.
+
+#### 6.2.4 I/O传输
+
+> IO传输
+> - 采用数据压缩的方式,减少网络IO的时间,安装Snappy和LZO压缩编码器
+> - 使用SequenceFile二进制文件
+
+#### 6.2.5 数据倾斜问题
+
+1. 数据倾斜问题
+
+> - 数据频率倾斜-某一个区域的数据量要远远大于其他区域
+> - 数据大小倾斜-部分记录的大小远远大于平均值
+
+2. 减少数据倾斜的方法
+
+> - 1) 抽样和范围分区
+>   - 可以通过对原始数据进行抽样得到的结果集来预设分区边界值
+> - 2) 自定义分区
+>   - 基于输出键的背景知识进行自定义分区,例如:如果Map输出键的单词来源一本书,且其中某几个专业词汇较多,那么就可以自定义分区将这些专业词汇发送到固定一部分Reduce实例,而将其他都发送给剩余的Reduce实例
+> - 3) Combine
+>   - 使用Combine可以大量地减少小数据倾斜,在可能的情况下,Combine的目的就是聚合并精简数据
+> - 4) 采用Map Join,尽量避免Reduce Join
+
+#### 6.2.6 常用的调优参数
+
+1. 资源相关参数
+
+> - 以下参数是在用户自己的MR应用程序中配置就可以生效(mapred-default.xml)
+
+<table>
+    <tr>
+        <th>配置参数</th>
+        <th>参数说明</th>
+    </tr>
+    <tr>
+        <th>mapreduce.map.memory.mb</th>
+        <th>一个MapTask可使用的资源上限(单位:MB),默认为1024,如果MapTask实际使用的资源量超过该值,则会被强制杀死</th>
+    </tr>
+    <tr>
+        <th>mapreduce.reduce.memory.mb</th>
+        <th>一个ReduceTask可使用的资源上限(单位:MB),默认1024,如果ReduceTask实际使用的资源量超过该值,则会被强制杀死</th>
+    </tr>
+    <tr>
+        <th>mapreduce.map.cpu.vcores</th>
+        <th>每个MapTask可使用的最多CPU CORE数目,默认值:1</th>
+    </tr>
+    <tr>
+        <th>mapreduce.reduce.cpu.vcores</th>
+        <th>每个ReduceTask可使用的最多CPU CORE数目,默认值:1</th>
+    </tr>
+    <tr>
+        <th>mapreduce.reduce.shuffle.parallelcopies</th>
+        <th>每个Reduce去Map中数据的并行数,默认值:5</th>
+    </tr>
+    <tr>
+        <th>mapreduce.reduce.shuffle.merge.precent</th>
+        <th>Buffer中的数据达到多少比例开始写入磁盘,默认值0.66</th>
+    </tr>
+    <tr>
+        <th>mapreduce.reduce.shuffle.input.buffer.precent</th>
+        <th>Buffer大小占Reduce可用内存的比例,默认值0.7</th>
+    </tr>
+    <tr>
+        <th>mapreduce.reduce.input.buffer.precent</th>
+        <th>指定多少比例的内存来存放Buffer中数据,默认值是0.0</th>
+    </tr>
+</table>
+
+> - 应该在YARN启动之前就配置在服务器的配置文件中才能生效(yarn-default.xml)
+
+<table>
+    <tr>
+        <th>配置参数</th>
+        <th>参数说明</th>
+    </tr>
+    <tr>
+        <th>yarn.scheduler.minimum-allocation-mb</th>
+        <th>给应用程序Container分配的最小内存,默认值:1024</th>
+    </tr>
+    <tr>
+        <th>yarn.scheduler.maximum-allocation-mb</th>
+        <th>给应用程序Container分配的最大内存,默认值:8192</th>
+    </tr>
+    <tr>
+        <th>yarn.scheduler.minimum-allocation-vcores</th>
+        <th>每个Container申请的最小CPU核数,默认值:1</th>
+    </tr>
+    <tr>
+        <th>yarn.scheduler.maximum-allocation-vcores</th>
+        <th>每个Container申请的最大CPU核数,默认值:32</th>
+    </tr>
+    <tr>
+        <th>yarn.nodemanager.resource.memory-mb</th>
+        <th>给Containers分配的最大物理内存,默认值:8192</th>
+    </tr>
+</table>
+
+> - Shuffle性能优化的关键参数,应在YARN启动之前就配置好(mapred-default.xml)
+
+<table>
+    <th>
+        <tr>配置参数</tr>
+        <tr>参数说明</tr>
+    </th>
+    <th>
+        <tr>mapreduce.map.maxattempts</tr>
+        <tr>每个Map Task最大重试次数,一旦重试参数超过该值,则认为Map Task运行失败,默认值:4</tr>
+    </th>
+    <th>
+        <tr>mapreduce.reduce.maxattempts</tr>
+        <tr>每个Reduce Task最大重试次数,一旦重试参数超过该值,则认为Map Task运行失败,默认值:4</tr>
+    </th>
+    <th>
+        <tr>mapreduce.task.timeout</tr>
+        <tr>Task超时时间,经常需要设置的一个参数,该参数表达的意思为:如果一个Task在一定时间内没有任何进入,即不会读取新的数据,也没有输出数据,则认为该Task处于Block状态,可能是卡住了,也许永远会卡住,为了防止因为用户程序永远Block住不退出,则强制设置了一个该超时时间(单位毫秒),默认是600000.如果你的程序对每条输入数据的处理时间过长(比如会访问数据库,通过网络拉取数据等),建议将该参数调大,该参数过小常出现的错误提示是"AttemptID:attempt_14267829456721_123456_m_000224_0 Timed out after 300 secsContainer killed by the ApplicationMaster."</tr>
+    </th>
+</table>
+
+### 6.3 HDFS小文件优化方法
+
+#### 6.3.1 HDFS小文件弊端
+
+> HDFS上每个文件都要在NameNode上建立一个索引,这个索引的大小约为150byte,这样当小文件比较多的时候，就会产生很多的索引文件,一方面会大量占用NameNode的内存空间,另一方面就是索引文件过大使得索引速度变慢
+
+#### 6.3.2 HDFS小文件解决方案
+
+> 小文件的优化无非以下几种方式
+> - 在数据采集的时候,就将小文件或小批数据合成大文件再上传HDFS
+> - 在业务处理之前,在HDFS上使用MapReduce程序对小文件进行合并
+> - 在MapReduce处理时,可采用CombineTextInputFormat提高效率
+
+1. Hadoop Archive
+
+> - 是一个高效地将小文件放入HDFS块中的文件存档工具,它能够将多个小文件打包成一个HAR文件,这样减少了NameNode的内存使用.
+
+2. Sequence File
+
+> - Sequence File由一些列的二进制key/value组成,如果key为文件名,value为文件内容,则可以将大批小文件合并成一个大文件
+
+3. CombineFileInputFormat
+
+> - CombineFileInputFormat是一种新的InputFormat,用于将多个文件合并成一个单独的Split,另外,它会考虑数据的存储位置.
+
+4. 开启JVM重用
+
+> - 对于大量小文件Job,可以开启JVM重用会减少45%运行时间.
+> - JVM重用原理:一个Map运行在一个JVM上,开启重用的话,该Map在JVM上运行完毕后,JVM继续运行其他Map
+> - 具体设置:mapreduce.job.jvm.numtasks值在10-20之间.
+
+
