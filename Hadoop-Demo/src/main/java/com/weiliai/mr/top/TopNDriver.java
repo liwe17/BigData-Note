@@ -1,12 +1,7 @@
 package com.weiliai.mr.top;
 
-import com.weiliai.mr.index.OneIndexDriver;
-import com.weiliai.mr.index.OneIndexMapper;
-import com.weiliai.mr.index.OneIndexReducer;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.NullWritable;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
