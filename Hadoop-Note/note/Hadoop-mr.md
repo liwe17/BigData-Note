@@ -1989,12 +1989,59 @@ com.weiliai.mr.wordcount.WordCountDriver
 ## 第七章 MapReduce扩展案例
 ### 7.1 倒排索引案例-多job串联
 
+1. 需求
+
+> - 有大量文本(文档,网页),需要建立搜索索引
+
+```text
+atguigu pingping
+atguigu ss
+atguigu ss
+... a.txt,b.txt,c.txt
+```
+
+> - 期望输出数据
+
+```text
+atguigu	c.txt-->2	b.txt-->2	a.txt-->3	
+pingping	c.txt-->1	b.txt-->3	a.txt-->1	
+ss	c.txt-->1	b.txt-->1	a.txt-->2	
+```
+
+2. 需求分析
+
+![倒排索引案例](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q3FkOHTRZgJyfxicPRQsGjtqx6icHnWQjJdaua6SnOo0Dokj0b45oL9K3cDT6I3K0TyaaMiaEsObqQVA/0?wx_fmt=png)
+
+
+3. 代码实现
+
+```text
+com.weiliai.mr.index
+```
 
 
 ### 7.2 TopN案例
 
+1. 需求: 针对输出流量使用量在前10的用户信息输出
+
+```text
+13470253144	180	180	360
+13509468723	7335	110349	117684
+13560439638	918	4938	5856
+13568436656	3597	25635	29232
+...top10input.txt
+```
+
+2. 需求分析
+
+![Top10案例分析](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q3FkOHTRZgJyfxicPRQsGjtqLRbCSj6k7nWSMLSxjnd6edMyGBicGfAJic2pkNrOkYSs77FmxHHMFUhQ/0?wx_fmt=png)
 
 
+3. 代码实现
+
+```text
+com.weiliai.mr.top
+```
 
 ### 7.3 找博客共同好友案例
 
