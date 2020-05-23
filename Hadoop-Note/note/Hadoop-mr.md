@@ -2045,11 +2045,39 @@ com.weiliai.mr.top
 
 ### 7.3 找博客共同好友案例
 
+1. 需求
 
+> - 以下是博客的好友列表数据,冒号前是一个用户,冒号后是该用户的所有好友(数据中的好友关系是单向的)<br>求出那些人两两之间有共同好友,以及她俩的共同好友都有谁
 
+```text
+A:B,C,D,F,E,O
+B:A,C,E,K
+C:F,A,D,I
+D:A,E,F,L
+...friends.txt
+```
+
+2. 需求分析
+
+> - 先求出A,B,C,...等是谁的好友
+
+3. 代码实现
+
+```text
+com.weiliai.mr.friend
+```
 
 ## 第八章 常见错误及解决方案
 
-
-
-
+> - 导包容易出错,尤其Text和CombineTextInputFormat
+> - Mapper中第一个输入的参数必须是LongWritable或者NullWritable,不可以是IntWritable.报的错误是类型转换异常
+> - java.lang.Exception:java.io.IOException:Illegal partition for 13926435656(4)说明Partition和ReduceTask个数没对上,调整ReduceTask个数
+> - 如果分区数不是1,但是reduceTask为1,是否执行分区过程?答案是:不执行分区过程
+>   - 因为在MapTask的源码中,执行分区的前提是先判断ReduceNum个数是否大于1.不大于1肯定不执行
+> - Unsupported major.minor version 52.0,一般为JDK版本问题
+> - 报类型转换异常
+>   - 通常都是在驱动函数中设置Map输出和最终输出时编写错误
+>   - Map输出的key如果没有排序
+> - 集群中运行wc.jar时出现了无法获得输入文件
+>   - 原因:WordCount案例的输入文件不能放用HDFS集群的根目录
+> - 自定义OutputFormat时,注意在RecordWriter中的close方法必须关闭流资源,否则输出的文件内容中数据为空
