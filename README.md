@@ -13,7 +13,7 @@
 > - Hadoop-mr.md        hadoop MapReduce学习笔记
 > - Hadoop-hdfs-ha.md   HDFS高可用学习笔记
 
-## Hadoop使用Demo
+### 2.1 Hadoop使用Demo
 
 > Hadoop-Demo
 > - hdfs            学习小Demo
@@ -23,3 +23,7 @@
 
 > Zookeeper-Note
 > - Zookeeper-Note.md   zookeeper学习笔记
+
+### 3.1 Zookeeper使用demo
+
+> Zookeeper-Demo

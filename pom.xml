@@ -15,6 +15,7 @@
         <module>Hadoop-Note</module>
         <module>Hadoop-Demo</module>
         <module>Zookeeper-Note</module>
+        <module>Zookeeper-Demo</module>
     </modules>
 
     <!-- 指定JDK1.8编码 -->
