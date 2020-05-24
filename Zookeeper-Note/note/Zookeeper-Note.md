@@ -275,11 +275,462 @@ server.2=hadoop102:2888:3888
     </tr>
 </table>
 
+1. 启动客户端
+2. 显示所有操作命令
+3. 查看当前znode中所包含的内容
+4. 查看当前节点详细数据
+
+```shell script
+[root@hadoop102 zookeeper-3.4.10]# pwd
+/opt/module/zookeeper-3.4.10
+[root@hadoop102 zookeeper-3.4.10]# jps
+6973 Jps
+6911 QuorumPeerMain
+[root@hadoop102 zookeeper-3.4.10]# bin/zkCli.sh 
+[zk: localhost:2181(CONNECTED) 0] help
+ZooKeeper -server host:port cmd args
+        stat path [watch]
+        set path data [version]
+        ls path [watch]
+        delquota [-n|-b] path
+        ls2 path [watch]
+        setAcl path acl
+        setquota -n|-b val path
+        history 
+        redo cmdno
+        printwatches on|off
+        delete path [version]
+        sync path
+        listquota path
+        rmr path
+        get path [watch]
+        create [-s] [-e] path data acl
+        addauth scheme auth
+        quit 
+        getAcl path
+        close 
+        connect host:port
+[zk: localhost:2181(CONNECTED) 1]  
+[zk: localhost:2181(CONNECTED) 1] ls /
+[zookeeper]
+[zk: localhost:2181(CONNECTED) 2] ls2 /
+[zookeeper]
+cZxid = 0x0
+ctime = Thu Jan 01 08:00:00 CST 1970
+mZxid = 0x0
+mtime = Thu Jan 01 08:00:00 CST 1970
+pZxid = 0x0
+cversion = -1
+dataVersion = 0
+aclVersion = 0
+ephemeralOwner = 0x0
+dataLength = 0
+numChildren = 1
+[zk: localhost:2181(CONNECTED) 3]
+
+```
+
+5. 分别创建2个普通节点
+6. 获取节点值
+
+```shell script
+[zk: localhost:2181(CONNECTED) 5] create /sanguo "jinlian"
+Created /sanguo
+[zk: localhost:2181(CONNECTED) 6] create /sanguo/shuguo "liubei" 
+Created /sanguo/shuguo
+[zk: localhost:2181(CONNECTED) 7] get /sanguo
+jinlian
+cZxid = 0x200000004
+ctime = Sun May 24 18:49:21 CST 2020
+mZxid = 0x200000004
+mtime = Sun May 24 18:49:21 CST 2020
+pZxid = 0x200000005
+cversion = 1
+dataVersion = 0
+aclVersion = 0
+ephemeralOwner = 0x0
+dataLength = 7
+numChildren = 1
+[zk: localhost:2181(CONNECTED) 8] 
+```
+
+7. 创建短暂节点
+
+> - 当前客户端可以看到
+> - 退出当前客户端在重启客户端
+> - 再次查看短暂节点已经删除
+```shell script
+[zk: localhost:2181(CONNECTED) 10] create -e /sanguo/wuguo "zhouyu"
+Created /sanguo/wuguo
+[zk: localhost:2181(CONNECTED) 11] ls /sanguo
+[wuguo, shuguo]
+[zk: localhost:2181(CONNECTED) 12] quit
+[root@hadoop102 zookeeper-3.4.10]# bin/zkCli.sh 
+[zk: localhost:2181(CONNECTED) 0] ls /sanguo
+[shuguo]
+[zk: localhost:2181(CONNECTED) 1] quit
+[root@hadoop102 zookeeper-3.4.10]# bin/zkCli.sh 
+[zk: localhost:2181(CONNECTED) 0] ls /sanguo
+[shuguo]
+```
+
+8. 创建带序号的节点
+
+> 如果原来没有序号节点,节点号从0开始依次递增,如果已经有两个节点,则从2开始,依次类推
+
+> - 先创建一个普通的根节点
+> - 创建带序号的节点
+
+```shell script
+[zk: localhost:2181(CONNECTED) 2] create /sanguo/weiguo "caocao"
+Created /sanguo/weiguo
+[zk: localhost:2181(CONNECTED) 3] create -s /sanguo/weiguo/xiaoqiao "jinlian"
+Created /sanguo/weiguo/xiaoqiao0000000000
+[zk: localhost:2181(CONNECTED) 4] create -s /sanguo/weiguo/daqiao  "jinlian" 
+Created /sanguo/weiguo/daqiao0000000001
+[zk: localhost:2181(CONNECTED) 5] create -s /sanguo/weiguo/diaochan  "jinlian"
+Created /sanguo/weiguo/diaochan0000000002
+[zk: localhost:2181(CONNECTED) 6] 
+```
+
+9. 修改节点数据值
+
+```shell script
+[zk: localhost:2181(CONNECTED) 6] set /sanguo/weiguo "simayi"
+cZxid = 0x20000000b
+ctime = Sun May 24 18:57:34 CST 2020
+mZxid = 0x20000000f
+mtime = Sun May 24 19:00:15 CST 2020
+pZxid = 0x20000000e
+cversion = 3
+dataVersion = 1
+aclVersion = 0
+ephemeralOwner = 0x0
+dataLength = 6
+numChildren = 3
+[zk: localhost:2181(CONNECTED) 7] ls /sanguo/weiguo
+[xiaoqiao0000000000, diaochan0000000002, daqiao0000000001]
+[zk: localhost:2181(CONNECTED) 8] get /sanguo/weiguo
+simayi
+cZxid = 0x20000000b
+ctime = Sun May 24 18:57:34 CST 2020
+mZxid = 0x20000000f
+mtime = Sun May 24 19:00:15 CST 2020
+pZxid = 0x20000000e
+cversion = 3
+dataVersion = 1
+aclVersion = 0
+ephemeralOwner = 0x0
+dataLength = 6
+numChildren = 3
+[zk: localhost:2181(CONNECTED) 9] 
+```
+
+10. 节点值变化监听
+
+> - 在hadoop100主机上注册监听/sanguo节点数据变化
+> - 在hadoop101主机上修改/sanguo节点数据
+> - 观察hadoop100主机收到的数据变化监听
+
+```shell script
+# hadoop100
+[zk: localhost:2181(CONNECTED) 29] get /sanguo watch                   
+xisi
+cZxid = 0x200000004
+ctime = Sun May 24 18:49:21 CST 2020
+mZxid = 0x200000014
+mtime = Sun May 24 19:05:53 CST 2020
+pZxid = 0x20000000b
+cversion = 4
+dataVersion = 1
+aclVersion = 0
+ephemeralOwner = 0x0
+dataLength = 4
+numChildren = 2
+[zk: localhost:2181(CONNECTED) 30] 
+
+# hadoop101
+[zk: localhost:2181(CONNECTED) 2] set /sanguo "xishi"
+cZxid = 0x200000004
+ctime = Sun May 24 18:49:21 CST 2020
+mZxid = 0x200000015
+mtime = Sun May 24 19:07:45 CST 2020
+pZxid = 0x20000000b
+cversion = 4
+dataVersion = 2
+aclVersion = 0
+ephemeralOwner = 0x0
+dataLength = 5
+numChildren = 2
+[zk: localhost:2181(CONNECTED) 3] 
+
+
+# hadoop100
+[zk: localhost:2181(CONNECTED) 30] 
+WATCHER::
+
+WatchedEvent state:SyncConnected type:NodeDataChanged path:/sanguo
+[zk: localhost:2181(CONNECTED) 30] 
+
+```
+
+11. 节点的子节点变化监听(路径变化)
+
+> - 在hadoop100主机注册监听/sanguo节点的子节点变化
+> - 在hadoop101主机/sanguo节点上创建子节点
+> - 在hadoop100主机收到子节点的变化的监听
+
+```shell script
+# hadoop100
+
+[zk: localhost:2181(CONNECTED) 30] ls /sanguo watch
+[shuguo, weiguo]
+
+#hadoop101
+[zk: localhost:2181(CONNECTED) 3] create /sanguo/jin "simayi"
+Created /sanguo/jin
+[zk: localhost:2181(CONNECTED) 4] 
+
+# hadoop100
+[zk: localhost:2181(CONNECTED) 31] 
+WATCHER::
+
+WatchedEvent state:SyncConnected type:NodeChildrenChanged path:/sanguo
+
+[zk: localhost:2181(CONNECTED) 31] 
+```
+
+12. 删除节点
+
+```shell script
+[zk: localhost:2181(CONNECTED) 4] delete /sanguo/jin
+```
+
+13. 递归删除几点
+
+```shell script
+[zk: localhost:2181(CONNECTED) 5] ls /sanguo/shuguo
+[]
+[zk: localhost:2181(CONNECTED) 7] rmr /sanguo/shuguo
+[zk: localhost:2181(CONNECTED) 8] ls /sanguo/shuguo 
+Node does not exist: /sanguo/shuguo
+[zk: localhost:2181(CONNECTED) 9] 
+```
+
+14. 查看节点状态
+
+```shell script
+[zk: localhost:2181(CONNECTED) 9] stat /sanguo
+cZxid = 0x200000004
+ctime = Sun May 24 18:49:21 CST 2020
+mZxid = 0x200000015
+mtime = Sun May 24 19:07:45 CST 2020
+pZxid = 0x200000018
+cversion = 7
+dataVersion = 2
+aclVersion = 0
+ephemeralOwner = 0x0
+dataLength = 5
+numChildren = 1
+[zk: localhost:2181(CONNECTED) 10] 
+```
 
 ### 4.3 API应用
 
+#### 4.3.1 环境搭建
+
+1. 创建maven工程
+2. 添加pom依赖
+3. 拷贝log4j.properties文件到resources目录
+
+```text
+Zookeeper-Demo zookeeper学习项目
+```
+
+#### 4.3.2 创建zookeeper客户端
+
+```text
+private static String CONNECT_ADDR = "hadoop100:2181,hadoop101:2181,hadoop102:2181";
+private static int SESSION_TIMEOUT = 2000;
+private ZooKeeper zkClient;
+
+//1. 创建Zookeeper客户端
+@Before
+public void init() throws Exception{
+    zkClient = new ZooKeeper(CONNECT_ADDR, SESSION_TIMEOUT, event -> {
+        //收到事件通知后的回调函数(用户的业务逻辑)
+        System.out.println(event.getType()+"--"+event.getPath());
+        //再次启动监听
+        try {
+            zkClient.getChildren("/", true).forEach(System.err::println);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    });
+}
+```
+
+#### 4.3.3 创建子节点
+
+```text
+//2. 创建节点
+    @Test
+    public void createNode() throws Exception{
+        final String path = zkClient.create("/atguigu2", "dagezuishuai".getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        System.out.println(path);
+    }
+```
+
+#### 4.3.4 获取子节点并监听节点变化
+
+```text
+//3. 获取子节点,并监控节点变化
+@Test
+public void getChildren() throws Exception{
+    List<String> children = zkClient.getChildren("/", true);
+    children.forEach(System.out::println);
+    //延时阻塞
+    TimeUnit.MILLISECONDS.sleep(Long.MAX_VALUE);
+}
+```
 
 
+#### 4.3.5 判断znode是否存在
+
+```text
+//4. 判断节点Znode是否岑在
+@Test
+public void exist() throws Exception{
+    Stat stat = zkClient.exists("/eclipse", false);
+    System.out.println(null == stat? "not exist" : "exist");
+}
+
+```
+
+### 4.4 监听服务器节点动态上下线案例
+
+1. 需求
+
+> - 某分布式系统,主节点可以有多台,可以动态上下线,任意一台客户端都能实时感知到节点服务器的上下线
+
+2. 需求分析
+
+![服务器动态上下线案例分析](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q2cCECYQgCHQaGBslYowDbxwwibOiboQ86VjiamofGZwG2gGOIdhT0pqbK8iaHftLGLREhia5lk4vS4aUw/0?wx_fmt=png)
+
+
+3. 具体实现
+
+> - 先在集群上创建/servers节点
+
+```shell script
+[zk: localhost:2181(CONNECTED) 0] create /servers "servers"
+Created /servers
+[zk: localhost:2181(CONNECTED) 1] 
+```
+
+> - 服务器端向Zookeeper注册代码
+
+```java
+public class DistributeServer {
+
+    private static String CONNECT_ADDR = "hadoop100:2181,hadoop101:2181,hadoop102:2181";
+    private static int SESSION_TIMEOUT = 2000;
+    private ZooKeeper zkClient;
+    private String parentNode = "/servers";
+
+
+    public static void main(String[] args){
+        //1. 获取zk连接
+        final DistributeServer server = new DistributeServer();
+        //2. 利用zk连接注册服务器信息
+        server.registerServer(args[0]);
+        //3. 启动业务功能
+        server.business(args[0]);
+    }
+
+
+    public void getConnect(){
+        zkClient = new ZooKeeper(CONNECT_ADDR,SESSION_TIMEOUT,event -> {});
+    }
+
+    public void registerServer(String hostname){
+        String create = zkClient.create(parentNode + "/server", hostname.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
+        System.out.println(hostname+" is online "+create);
+    }
+
+    public void business(String hostname){
+        System.out.println(hostname+" is working ...");
+
+        TimeUnit.MILLISECONDS.sleep(Long.MAX_VALUE);
+    }
+}
+
+```
+
+> - 客户端代码
+
+```java
+public class DistributeClient {
+
+    private static String CONNECT_ADDR = "hadoop100:2181,hadoop101:2181,hadoop102:2181";
+
+    private static int SESSION_TIMEOUT = 2000;
+
+    private ZooKeeper zkClient;
+
+    private String parentNode = "/servers";
+
+    public static void main(String[] args) {
+
+        //1. 获取zk连接
+        DistributeClient client = new DistributeClient();
+        client.getConnect();
+
+        //2. 获取servers的子节点信息,从中获取服务器信息列表
+        client.getServerList();
+
+        //3. 业务进程启动
+        client.business();
+    }
+
+    // 创建连接
+    public void getConnect(){
+        zkClient = new ZooKeeper(CONNECT_ADDR,SESSION_TIMEOUT,event -> {
+            //启动监听
+            try {
+                getServerList();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    // 获取服务器列表
+    public void getServerList(){
+
+        //1. 获取服务器子节点信息,并且对父节点进行监听
+        List<String> children = zkClient.getChildren(parentNode, true);
+
+        //2. 存储服务器信息列表
+        children.stream().map(e-> {
+            try {
+                return new String((zkClient.getData(parentNode + "/" + e, false, null)));
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                return null;
+            }
+        }).collect(Collectors.toList()).forEach(System.out::println);
+
+    }
+
+    // 业务功能
+    public void business(){
+        System.out.println("client is working ...");
+        TimeUnit.MILLISECONDS.sleep(Long.MAX_VALUE);
+    }
+
+}
+```
 
 ## 第五章 企业面试真题
 ### 5.1 zookeeper的部署方式有几种?集群中的角色有哪些?集群最少需要几台机器?
