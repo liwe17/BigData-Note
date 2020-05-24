@@ -173,10 +173,107 @@ Stopping zookeeper ... STOPPED
 ## 第四章 zookeeper实战(开发重点)
 ### 4.1 分布式安装部署
 
+1. 集群规划:在hadoop100,hadoop101和hadoop102三个节点上部署Zookeeper
+2. 解压安装,并同步到其他机器
+
+```shell script
+[root@hadoop100 software]# ls
+hadoop-2.7.2.tar.gz  jdk-8u144-linux-x64.tar.gz  zookeeper-3.4.10.tar.gz
+[root@hadoop100 software]# tar -zxvf zookeeper-3.4.10.tar.gz -C /opt/module/
+[root@hadoop100 software]# xsync zookeeper-3.4.10/
+```
+
+3. 配置服务器编号,3台服务器myid分别为0,1,2,必须和后面service.id一致
+
+```shell script
+[root@hadoop100 zookeeper-3.4.10]# mkdir -p zkData
+[root@hadoop100 zookeeper-3.4.10]# touch myid
+[root@hadoop100 zookeeper-3.4.10]# vi myid
+```
+
+4. 配置zoo.cfg,并同步配置文件
+
+> - 重命名/opt/module/zookeeper-3.4.10/conf这个目录下的zoo_sample.cfg为zoo.cfg
+> - 打开zoo.cfg文件,修改数据存储路径配置并增加配置
+> - 同步zoo.cfg配置文件
+
+```shell script
+[root@hadoop100 zookeeper-3.4.10]# cd conf && mv zoo_sample.cfg zoo.cfg
+[root@hadoop102 conf]# vi zoo.cfg
+dataDir=/opt/module/zookeeper-3.4.10/zkData
+#######################cluster##########################
+server.0=hadoop100:2888:3888
+server.1=hadoop101:2888:3888
+server.2=hadoop102:2888:3888
+~
+"zoo.cfg" 33L, 1111C written
+[root@hadoop102 conf]# xsync zoo.cfg
+```
+
+> - 配置参数解读,server.A=B:C:D
+>   - A是一个数字，表示这个是第几号服务器
+>     - 集群模式下配置一个文件myid,这个文件在dataDir目录下,这个文件里面有一个数据就是A的值,Zookeeper启动时读取此文件，拿到里面的数据与zoo.cfg里面的配置信息比较从而判断到底是哪个server
+>   - B是这个服务器的ip地址
+>   - C是这个服务器与集群中的Leader服务器交换信息的端口
+>   - D是万一集群中的Leader服务器挂了,需要一个端口来重新进行选举,选出一个新的Leader,而这个端口就是用来执行选举时服务器相互通信的端口
 
 
+5. 集群的操作<3台服务器均需要执行以下命令>
+
+> - zookeeper的启动
+> - zookeeper的查看
+> - zookeeper的关闭
+
+```shell script
+[root@hadoop101 zookeeper-3.4.10]# bin/zkServer.sh start
+[root@hadoop101 zookeeper-3.4.10]# bin/zkServer.sh status
+[root@hadoop101 zookeeper-3.4.10]# bin/zkServer.sh stop
+```
 
 ### 4.2 客户端命令行操作
+
+<table>
+    <tr>
+        <th>命令基本语法</th>
+        <th>功能描述</th>
+    </tr>
+    <tr>
+        <th>help</th>
+        <th>显示所有操作命令</th>
+    </tr>
+    <tr>
+        <th>ls path[watch]</th>
+        <th>使用ls命令来查看当前znode中所包含的内容</th>
+    </tr>
+    <tr>
+        <th>ls2 path[watch]</th>
+        <th>查看当前节点数据并能看到更新次数等数据</th>
+    </tr>
+    <tr>
+        <th>create</th>
+        <th>普通创建<br>-s 含有序列<br>-e 临时(重启或者超时消失)</th>
+    </tr>
+    <tr>
+        <th>get path[watch]</th>
+        <th>获得节点的值</th>
+    </tr>
+    <tr>
+        <th>set</th>
+        <th>设置节点的具体值</th>
+    </tr>
+    <tr>
+        <th>stat</th>
+        <th>查看节点状态</th>
+    </tr>
+    <tr>
+        <th>delete</th>
+        <th>删除节点</th>
+    </tr>
+    <tr>
+        <th>rmr</th>
+        <th>递归删除节点</th>
+    </tr>
+</table>
 
 
 ### 4.3 API应用
@@ -192,7 +289,4 @@ Stopping zookeeper ... STOPPED
 
 ### 5.2 常用命令
 > ls/create/get/delete/set...
-
-
-
 
