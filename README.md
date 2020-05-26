@@ -27,3 +27,8 @@
 ### 3.1 Zookeeper使用demo
 
 > Zookeeper-Demo
+
+### 四. Hive基础
+
+> Hive-Note
+> - Hive-Note.md    Hive-Note学习笔记
