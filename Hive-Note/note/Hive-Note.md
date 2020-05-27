@@ -94,19 +94,380 @@
 ## 第二章 Hive安装
 ### 2.1 Hive安装地址
 
-
+1. Hive官网地址:http://hive.apache.org/
+2. 文档查看地址:https://cwiki.apache.org/confluence/display/Hive/GettingStarted
+3. 下载地址:http://archive.apache.org/dist/hive/
+4. github地址:https://github.com/apache/hive 
 
 ### 2.2 Hive安装部署
 
+1. Hive安装及配置
+
+> - 把apache-hive-1.2.1-bin.tar.gz上传到linux的/opt/software目录下
+> - 解压apache-hive-1.2.1-bin.tar.gz到/opt/module/目录下面
+> - 修改apache-hive-1.2.1-bin.tar.gz的名称为hive
+
+```shell script
+[root@hadoop100 software]# pwd
+/opt/software
+[root@hadoop100 software]# ls
+apache-hive-1.2.1-bin.tar.gz  hadoop-2.7.2.tar.gz  jdk-8u144-linux-x64.tar.gz  mysql-libs.zip  zookeeper-3.4.10.tar.gz
+[root@hadoop100 software]# tar -zxvf apache-hive-1.2.1-bin.tar.gz -C /opt/module/
+[root@hadoop100 software]# cd ../software/
+[root@hadoop100 software]# mv apache-hive-1.2.1-bin/ hive
+```
+
+> - 修改/opt/module/hive/conf目录下的hive-env.sh.template名称为hive-env.sh
+> - 配置hive-env.sh文件
+>   - 配置HADOOP_HOME路径
+>   - 配置HIVE_CONF_DIR路径
+
+```shell script
+[root@hadoop100 hive]# cd conf/
+[root@hadoop100 conf]# ll
+总用量 188
+-rw-rw-r--. 1 root root   1139 4月  30 2015 beeline-log4j.properties.template
+-rw-rw-r--. 1 root root 168431 6月  19 2015 hive-default.xml.template
+-rw-rw-r--. 1 root root   2378 4月  30 2015 hive-env.sh.template
+-rw-rw-r--. 1 root root   2662 4月  30 2015 hive-exec-log4j.properties.template
+-rw-rw-r--. 1 root root   3050 4月  30 2015 hive-log4j.properties.template
+-rw-rw-r--. 1 root root   1593 4月  30 2015 ivysettings.xml
+[root@hadoop100 conf]# mv hive-env.sh.template hive-env.sh
+[root@hadoop100 conf]# vi hive-env.sh 
+export HADOOP_HOME=/opt/module/hadoop-2.7.2
+export HIVE_CONF_DIR=/opt/module/hive/conf
+"hive-env.sh" 56L, 2465C written
+[root@hadoop100 conf]# 
+```
+
+2. Hadoop集群配置
+
+> - 必须启动hdfs和yarn
+> - 在HDFS上创建/tmp和/user/hive/warehouse两个目录并修改他们的同组权限可写
+
+```shell script
+[root@hadoop100 hadoop-2.7.2]# sbin/start-dfs.sh
+[root@hadoop101 hadoop-2.7.2]# sbin/start-yarn.sh
+[root@hadoop101 hadoop-2.7.2]#
+[root@hadoop102 hadoop-2.7.2]# bin/hadoop fs -mkdir /tmp
+[root@hadoop102 hadoop-2.7.2]# bin/hadoop fs -mkdir -p /user/hive/warehouse
+[root@hadoop102 hadoop-2.7.2]# bin/hadoop fs -chmod g+w /tmp
+[root@hadoop102 hadoop-2.7.2]# bin/hadoop fs -chmod g+w /user/hive/warehouse
+[root@hadoop102 hadoop-2.7.2]# 
+
+```
+
+3. Hive基本操作
+
+> - 启动hive
+> - 查看数据库
+> - 打开默认数据库
+> - 显示默认数据库中的表
+> - 创建表
+> - 显示数据库中又几张表
+> - 查看表结构
+> - 表中插入数据
+> - 查询表中数据
+> - 退出hive
+
+```shell script
+[root@hadoop100 hive]# bin/hive
+Logging initialized using configuration in jar:file:/opt/module/hive/lib/hive-common-1.2.1.jar!/hive-log4j.properties
+hive> show databases;
+hive> use default;
+hive> show tables;
+hive> create table student(id int, name string);
+hive> show tables;
+hive> desc student;                                 
+hive> insert into student values(1000,"ss");
+hive> select * from student;
+hive> quit
+```
 
 ### 2.3 将本地文件导入Hive案例
 
+> 需求:将本地/opt/module/datas/student.txt这个目录下的数据导入到hive的student(id int, name string)表中
+
+1. 数据准备
+
+> - 在/opt/module/datas这个目录下准备数据,注意以tab键间隔
+
+```shell script
+[root@hadoop100 hive]# mkdir -p /opt/module/datas && cd /opt/module/datas && touch student.txt
+[root@hadoop100 datas]# vi student.txt 
+1001    zhangsan
+1002    lishi
+1003    zhaoliu
+"student.txt" 3L, 38C written
+[root@hadoop100 datas]# 
+```
+
+2. Hive实际操作
+
+> - 启动hive
+> - 显示数据库
+> - 使用default数据库
+> - 删除已创建的student表
+> - 创建student表,,并声明文件分隔符'\t'
+> - 加载/opt/module/datas/student.txt 文件到student数据库表中
+> - Hive查询结果
+
+```shell script
+[root@hadoop100 hive]# bin/hive
+hive> show databases;
+hive> use default;
+hive> show tables;
+hive> drop table student;
+hive> create table student(id int, name string) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t';
+hive> load data local inpath '/opt/module/datas/student.txt' into table student;
+hive>  select * from student;
+OK
+1001    zhangsan
+1002    lishi
+1003    zhaoliu
+Time taken: 0.189 seconds, Fetched: 3 row(s)
+hive> 
+```
+
+3. 遇到的问题
+
+> 再打开一个客户端窗口启动hive，会产生java.sql.SQLException异常 <br>
+> 原因是Metastore默认存储在自带的derby数据库中,推荐使用MySQL存储Metastore;
 
 ### 2.4 MySql安装
 
+#### 2.4.1 安装包准备
+
+> - 查看mysql是否安装,如果安装了,卸载mysql
+> - 解压mysql-libs.zip文件到当前目录
+> - 进入到mysql-libs文件夹下
+
+```shell script
+[root@hadoop100 software]# rpm -qa |grep mysql
+[root@hadoop100 software]# rpm -e --nodeps mysql包名
+[root@hadoop100 software]# unzip mysql-libs.zip
+[root@hadoop100 mysql-libs]# ls
+MySQL-client-5.6.24-1.el6.x86_64.rpm  MySQL-server-5.6.24-1.el6.x86_64.rpm
+mysql-connector-java-5.1.27.tar.gz
+[root@hadoop100 mysql-libs]# 
+```
+
+#### 2.4.2 安装MySql服务器
+
+> - 安装mysql服务端
+> - 查看产生的随机密码
+> - 查看mysql状态
+> - 启动mysql
+
+```shell script
+[root@hadoop100 mysql-libs]# rpm -ivh MySQL-server-5.6.24-1.el6.x86_64.rpm
+[root@hadoop100 mysql-libs]# cat /root/.mysql_secret
+# The random password set for the root user at Wed May 27 17:09:00 2020 (local time): B0g0iCUnvYWj7_gx
+
+[root@hadoop100 mysql-libs]# service mysql status
+ ERROR! MySQL is not running
+[root@hadoop100 mysql-libs]# service mysql start
+Starting MySQL.. SUCCESS! 
+```
+
+#### 2.4.3 安装MySql客户端
+
+> - 安装mysql客户端
+> - 链接mysql
+> - 修改密码
+> - 退出mysql
+
+```shell script
+[root@hadoop100 mysql-libs]# rpm -ivh MySQL-client-5.6.24-1.el6.x86_64.rpm
+[root@hadoop100 mysql-libs]# mysql -uroot -pB0g0iCUnvYWj7_gx
+Warning: Using a password on the command line interface can be insecure.
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 1
+Server version: 5.6.24
+
+Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql> SET PASSWORD=PASSWORD('123456');
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> exit;
+Bye
+[root@hadoop100 mysql-libs]# 
+```
+
+#### 2.4.4 MySql中user表中主机配置
+
+> 配置只要是root用户+密码,在任何主机上都能登录MySQL数据库
+> - 进入mysql
+> - 显示数据库
+> - 使用mysql数据库
+> - 展示mysql数据库中的所有表
+> - 展示user表的结构
+> - 查询user表
+> - 修改user表,把Host表内容修改为%
+> - 删除root用户的其他host
+> - 刷新并退出
+
+```shell script
+[root@hadoop100 mysql-libs]# mysql -uroot -p123456
+Warning: Using a password on the command line interface can be insecure.
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 2
+Server version: 5.6.24 MySQL Community Server (GPL)
+
+Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql> show databases;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
+| test               |
++--------------------+
+4 rows in set (0.00 sec)
+
+mysql> use mysql;
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+mysql> show tables;
++---------------------------+
+| Tables_in_mysql           |
++---------------------------+
+| columns_priv              |
+| db                        |
+| event                     |
+| func                      |
+| general_log               |
+| help_category             |
+| help_keyword              |
+| help_relation             |
+| help_topic                |
+| innodb_index_stats        |
+| innodb_table_stats        |
+| ndb_binlog_index          |
+| plugin                    |
+| proc                      |
+| procs_priv                |
+| proxies_priv              |
+| servers                   |
+| slave_master_info         |
+| slave_relay_log_info      |
+| slave_worker_info         |
+| slow_log                  |
+| tables_priv               |
+| time_zone                 |
+| time_zone_leap_second     |
+| time_zone_name            |
+| time_zone_transition      |
+| time_zone_transition_type |
+| user                      |
++---------------------------+
+28 rows in set (0.00 sec)
+
+mysql> desc user;
++------------------------+-----------------------------------+------+-----+-----------------------+-------+
+| Field                  | Type                              | Null | Key | Default               | Extra |
++------------------------+-----------------------------------+------+-----+-----------------------+-------+
+| Host                   | char(60)                          | NO   | PRI |                       |       |
+| User                   | char(16)                          | NO   | PRI |                       |       |
+| Password               | char(41)                          | NO   |     |                       |       |
+| Select_priv            | enum('N','Y')                     | NO   |     | N                     |       |
+| Insert_priv            | enum('N','Y')                     | NO   |     | N                     |       |
+| Update_priv            | enum('N','Y')                     | NO   |     | N                     |       |
+| Delete_priv            | enum('N','Y')                     | NO   |     | N                     |       |
+| Create_priv            | enum('N','Y')                     | NO   |     | N                     |       |
+| Drop_priv              | enum('N','Y')                     | NO   |     | N                     |       |
+| Reload_priv            | enum('N','Y')                     | NO   |     | N                     |       |
+| Shutdown_priv          | enum('N','Y')                     | NO   |     | N                     |       |
+| Process_priv           | enum('N','Y')                     | NO   |     | N                     |       |
+| File_priv              | enum('N','Y')                     | NO   |     | N                     |       |
+| Grant_priv             | enum('N','Y')                     | NO   |     | N                     |       |
+| References_priv        | enum('N','Y')                     | NO   |     | N                     |       |
+| Index_priv             | enum('N','Y')                     | NO   |     | N                     |       |
+| Alter_priv             | enum('N','Y')                     | NO   |     | N                     |       |
+| Show_db_priv           | enum('N','Y')                     | NO   |     | N                     |       |
+| Super_priv             | enum('N','Y')                     | NO   |     | N                     |       |
+| Create_tmp_table_priv  | enum('N','Y')                     | NO   |     | N                     |       |
+| Lock_tables_priv       | enum('N','Y')                     | NO   |     | N                     |       |
+| Execute_priv           | enum('N','Y')                     | NO   |     | N                     |       |
+| Repl_slave_priv        | enum('N','Y')                     | NO   |     | N                     |       |
+| Repl_client_priv       | enum('N','Y')                     | NO   |     | N                     |       |
+| Create_view_priv       | enum('N','Y')                     | NO   |     | N                     |       |
+| Show_view_priv         | enum('N','Y')                     | NO   |     | N                     |       |
+| Create_routine_priv    | enum('N','Y')                     | NO   |     | N                     |       |
+| Alter_routine_priv     | enum('N','Y')                     | NO   |     | N                     |       |
+| Create_user_priv       | enum('N','Y')                     | NO   |     | N                     |       |
+| Event_priv             | enum('N','Y')                     | NO   |     | N                     |       |
+| Trigger_priv           | enum('N','Y')                     | NO   |     | N                     |       |
+| Create_tablespace_priv | enum('N','Y')                     | NO   |     | N                     |       |
+| ssl_type               | enum('','ANY','X509','SPECIFIED') | NO   |     |                       |       |
+| ssl_cipher             | blob                              | NO   |     | NULL                  |       |
+| x509_issuer            | blob                              | NO   |     | NULL                  |       |
+| x509_subject           | blob                              | NO   |     | NULL                  |       |
+| max_questions          | int(11) unsigned                  | NO   |     | 0                     |       |
+| max_updates            | int(11) unsigned                  | NO   |     | 0                     |       |
+| max_connections        | int(11) unsigned                  | NO   |     | 0                     |       |
+| max_user_connections   | int(11) unsigned                  | NO   |     | 0                     |       |
+| plugin                 | char(64)                          | YES  |     | mysql_native_password |       |
+| authentication_string  | text                              | YES  |     | NULL                  |       |
+| password_expired       | enum('N','Y')                     | NO   |     | N                     |       |
++------------------------+-----------------------------------+------+-----+-----------------------+-------+
+43 rows in set (0.00 sec)
+
+mysql> select User, Host, Password from user;
++------+-----------+-------------------------------------------+
+| User | Host      | Password                                  |
++------+-----------+-------------------------------------------+
+| root | localhost | *6BB4837EB74329105EE4568DDA7DC67ED2CA2AD9 |
+| root | hadoop100 | *DC33C7DE36DD7C3AF22D09FCED61E255358080C1 |
+| root | 127.0.0.1 | *DC33C7DE36DD7C3AF22D09FCED61E255358080C1 |
+| root | ::1       | *DC33C7DE36DD7C3AF22D09FCED61E255358080C1 |
++------+-----------+-------------------------------------------+
+4 rows in set (0.00 sec)
+
+mysql> delete from user where Host='hadoop100';
+Query OK, 1 row affected (0.00 sec)
+
+mysql> delete from user where Host='127.0.0.1';
+Query OK, 1 row affected (0.00 sec)
+
+mysql> delete from user where Host='::1';
+Query OK, 1 row affected (0.00 sec)
+
+mysql> flush privileges;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> quit;
+Bye
+[root@hadoop100 mysql-libs]# 
+
+```
 
 ### 2.5 Hive元数据配置到MySql
 
+#### 2.5.1 驱动拷贝
+
+
+#### 2.5.2 配置Metastore到MySql
+
+
+#### 2.5.3 多窗口启动Hive测试
 
 
 ### 2.6 HiveJDBC访问
