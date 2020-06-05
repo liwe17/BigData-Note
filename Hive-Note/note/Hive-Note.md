@@ -463,21 +463,163 @@ Bye
 
 #### 2.5.1 驱动拷贝
 
+> 1. 在/opt/software/mysql-libs目录下解压mysql-connector-java-5.1.27.tar.gz驱动包
+> 2. 拷贝/opt/software/mysql-libs/mysql-connector-java-5.1.27目录下的mysql-connector-java-5.1.27-bin.jar到/opt/module/hive/lib/
+
+```shell script
+[root@hadoop100 mysql-libs]# tar -zxvf mysql-connector-java-5.1.27.tar.gz
+[root@hadoop100 mysql-connector-java-5.1.27]# cp mysql-connector-java-5.1.27-bin.jar  /opt/module/hive/lib/
+```
 
 #### 2.5.2 配置Metastore到MySql
 
+> - 在/opt/module/hive/conf目录下创建一个hive-site.xml
+> - 根据官方文档配置参数，拷贝数据到hive-site.xml文件中
+> - 配置完毕后,如果启动hive异常,可以重新启动虚拟机.(重启后,别忘了启动hadoop集群)
+
+```shell script
+[root@hadoop100 conf]# touch hive-site.xml && vi hive-site.xml
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+        <property>
+          <name>javax.jdo.option.ConnectionURL</name>
+          <value>jdbc:mysql://hadoop100:3306/metastore?createDatabaseIfNotExist=true</value>
+          <description>JDBC connect string for a JDBC metastore</description>
+        </property>
+
+        <property>
+          <name>javax.jdo.option.ConnectionDriverName</name>
+          <value>com.mysql.jdbc.Driver</value>
+          <description>Driver class name for a JDBC metastore</description>
+        </property>
+
+        <property>
+          <name>javax.jdo.option.ConnectionUserName</name>
+          <value>root</value>
+          <description>username to use against metastore database</description>
+        </property>
+
+        <property>
+          <name>javax.jdo.option.ConnectionPassword</name>
+          <value>123456</value>
+          <description>password to use against metastore database</description>
+        </property>
+</configuration>
+~
+~
+"hive-site.xml" 28L, 884C written
+[root@hadoop100 conf]# 
+
+```
 
 #### 2.5.3 多窗口启动Hive测试
+
+> - 先启动MySQL
+> - 再次打开多个窗口,分别启动hive
+> - 启动hive后,回到MySQL窗口查看数据库,显示增加了metastore数据库
+
+```shell script
+[root@hadoop100 hadoop-2.7.2]# sbin/start-dfs.sh 
+[root@hadoop101 hadoop-2.7.2]# sbin/start-yarn.sh
+
+[root@hadoop100 hive]# bin/hive
+Logging initialized using configuration in jar:file:/opt/module/hive/lib/hive-common-1.2.1.jar!/hive-log4j.properties
+hive> 
+
+[root@hadoop100 hive]# bin/hive
+
+Logging initialized using configuration in jar:file:/opt/module/hive/lib/hive-common-1.2.1.jar!/hive-log4j.properties
+hive> 
+
+[root@hadoop100 hadoop-2.7.2]# mysql -uroot -p123456
+mysql> show databases;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| metastore          |
+| mysql              |
+| performance_schema |
+| test               |
++--------------------+
+5 rows in set (0.01 sec)
+
+mysql> 
+```
 
 
 ### 2.6 HiveJDBC访问
 
+#### 2.6.1 启动hiveserver2服务
+
+
+#### 2.6.2 启动beeline
+
+
+#### 2.6.3 连接hiveserver2
+
 
 ### 2.7 Hive常用交互命令
 
+> - "-e"不进入hive的交互窗口执行sql语句
+> - "-f"执行脚本中sql语句
+>   - 在/opt/module/datas目录下创建hivef.sql文件
+>   - 执行文件中的sql语句
+>   - 执行文件中的sql语句并将结果写入文件中
 
 ### 2.8 Hive其他命令操作
 
+> - 退出hive窗口
+> - 在hive cli命令窗口中如何查看hdfs文件系统
+> - 在hive cli命令窗口中如何查看本地文件系统
+> - 查看在hive中输入的所有历史命令
+>   - 进入到当前用户的根目录/root
+>   - 查看.hivehistory文件
 
 
 ### 2.9 Hive常见属性配置
+#### 2.9.1 Hive数据仓库位置配置
+
+> - Default数据仓库的最原始位置是在hdfs上的:/user/hive/warehouse路径下
+> - 在仓库目录下,没有对默认的数据库default创建文件夹.如果某张表属于default数据库,直接在数据仓库目录下创建一个文件夹
+> - 修改default数据仓库原始位置(将hive-default.xml.template如下配置信息拷贝到hive-site.xml文件中
+
+
+#### 2.9.2 查询后信息显示配置
+
+> - 在hive-site.xml文件中添加如下配置信息,就可以实现显示当前数据库,以及查询表的头信息配置
+> - 重新启动hive,对比配置前后差异
+
+#### 2.9.3 Hive运行日志信息配置
+
+> - Hive的log默认存放在/tmp/atguigu/hive.log目录下(当前用户名下)
+> - 修改hive的log存放日志到/opt/module/hive/logs
+>   - 修改/opt/module/hive/conf/hive-log4j.properties.template文件名称为hive-log4j.properties
+>   - 在hive-log4j.properties文件中修改log存放位置
+
+#### 2.9.4 参数配置方式
+
+> - 查看当前所有的配置信息
+> - 参数的配置三种方式
+>   - 配置文件方式
+>   - 命令行参数方式
+>   - 参数声明方式
+
+
+## 第三章 Hive数据类型
+### 3.1 基本数据类型
+
+
+
+### 3.2 集合数据类型
+
+
+### 3.3 类型转化
+
+
+## 第四章 DDL数据定义
+### 4.1 创建数据库
+
+### 4.2 查询数据库
+
