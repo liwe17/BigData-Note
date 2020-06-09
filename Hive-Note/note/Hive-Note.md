@@ -1904,33 +1904,176 @@ drop table dept_partition;
 ### 5.1 数据导入
 #### 5.1.1 向表中装载数据(load)
 
+> 语法
+> - load data [local] inpath '文件路径' [overwrite] into table tablename [partition (key1=value1,...)]
+>   - load data:表示加载数据
+>   - local:从本地加载数据到hive表,否则从HDFS加载数据到hive表
+>   - inpath:表示数据加载路径
+>   - overwrite:表示覆盖表中数据,否则表示追加
+>   - into table:表示加载到那张表
+>   - partition:表示上传到指定分区
+
+> 案例
+> - 创建一张表,先加载本地文件到hive,再加载HDFS到hive,通过覆盖加载数据到表中.
+
+```hiveql
+create table  student(id string,name string) row format delimited fields terminated by "\t";
+
+load data local inpath '/opt/datas/student.txt' into table student;
+
+dfs -put /opt/datas/student.txt  /user/atguigu/hive;
+load data inpath '/user/atguigu/hive/student.txt' into table student;
+
+load data local inpath '/opt/module/datas/student.txt' overwrite into table student;
+
+```
+
+> - 操作过程
+
+```shell script
+
+```
 
 #### 5.1.2 通过查询语句向表中插入数据(insert)
+
+> 案例
+> - 创建一张分区表,基本插入数据,基本模式插入(根据单张表查询结果),多插入模式(根据多张表查询结果)
+
+```hiveql
+create table  student(id int,name string) partitioned by(month string) row format delimited fields terminated by "\t";
+
+insert into table student partition (month='201709') values (1,"wang wu");
+
+insert overwrite table student partition(month='201708') select id,name from student where month='201709';
+
+from student  insert overwrite table student partition (month='201707') select id,name where month='201709' insert overwrite table student partition (month='201706') select id,name where month='201709'  
+
+```
+
+> 操作过程
+
+```shell script
+
+```
 
 
 #### 5.1.3 查询语句中创建表并加载数据(as select)
 
+> 根据查询结果创建表(查询的结果会添加到新创建的表中)
+
+```text
+
+create table if not exists student3 as select id,name from student;
+
+```
 
 #### 5.1.4 创建表时通过Location指定加载数据路径
+
+> 案例
+> - 创建表并指定在hdfs上的位置,上传数据到hdfs并查询
+
+```hiveql
+
+create table if not exists student5 (id int,name string) row format delimited fields terminated by "\t" location '/user/hive/warehouse/student5';
+
+dfs -put /opt/module/datas/student.txt /user/hive/warehouse/student5;
+
+select * from student5;
+
+```
+
+> 操作过程
+
+```shell script
+
+```
 
 
 #### 5.1.5 Import数据到指定Hive表中
 
+> 注意: 必须先用export导出后,再将数据导入.
+
+```hiveql
+
+import table student2 partition (month='201709') from '/user/hive/warehouse/export/student';
+
+```
 
 ### 5.2 数据导出
 #### 5.2.1 Insert导出
 
+> 案例
+> - 将查询的结果导出到本地
+> - 将查询的结果格式化导出到本地
+> - 将查询的结果导出到HDFS上
+
+```hiveql
+
+insert overwrite local directory '/opt/module/datas/export/student' select * from student;
+
+insert overwrite local directory '/opt/module/datas/export/student' ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t'  select * from student;
+
+insert overwrite directory '/user/atguigu/student2' ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' select * from student;
+
+```
+
+> 操作过程
+
+```shell script
+
+```
+
 
 #### 5.2.2 Hadoop命令导出到本地
+
+```hiveql
+dfs -get /user/hive/warehouse/student/month=201709/000000_0 /opt/module/datas/export/student3.txt;
+```
 
 
 #### 5.2.3 Hive Shell 命令导出
 
+> 基本语法
+> - hive -f/-e 执行语句或者脚本 > file
+
+```shell script
+[root@hadoop100 hive]# bin/hive -e 'select * from default.student;' > /opt/module/datas/export/student4.txt;
+```
 
 #### 5.2.4 Export导出到HDFS上
 
+```hiveql
+export table default.student to '/user/hive/warehouse/export/student';
+```
 
 #### 5.2.5 Sqoop导出
 
+> 有专门的学科讲.
 
 ### 5.3 清除表中数据(Truncate)
+
+> truncate只能删除管理表,不能删除外部表中数据
+
+```hiveql
+truncate table student;
+```
+
+## 第六章 查询
+
+> 官方文档: https://cwiki.apache.org/confluence/display/Hive/LanguageManual+Select
+
+> 基本语句语法
+
+```text
+[WITH CommonTableExpression (,CommonTableExpression)*] (Note: Only available starting with Hive 0.13.0)
+SELECT [ALL | DISTINCT] select_expr,select_expr,...
+  FROM table_reference
+  [WHERE where_condition]
+  [GROUP BY col_list]
+  [ORDER BY col_list]
+  [CLUSTER BY col_list | [DISTRIBUTE BY col_list] [SORT BY col_list]]
+  [LIMIT number]
+```
+
+### 6.1 基本查询(select...from)
+#### 6.1.1 全表和特定列查询
