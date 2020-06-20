@@ -2057,12 +2057,6 @@ insert overwrite directory '/user/atguigu/student2' ROW FORMAT DELIMITED FIELDS 
 
 ```
 
-> 操作过程
-
-```shell script
-
-```
-
 
 #### 5.2.2 Hadoop命令导出到本地
 
@@ -2128,6 +2122,45 @@ SELECT [ALL | DISTINCT] select_expr,select_expr,...
 > 1. 全表查询
 > 2. 选择特定列查询
 
+```text
+hive (default)> select * from emp;
+OK
+emp.empno       emp.ename       emp.job emp.mgr emp.hiredate    emp.sal emp.comm        emp.deptno
+7369    SMITH   CLERK   7902    1980-12-17      800.0   NULL    20
+7499    ALLEN   SALESMAN        7698    1981-2-20       1600.0  300.0   30
+7521    WARD    SALESMAN        7698    1981-2-22       1250.0  500.0   30
+7566    JONES   MANAGER 7839    1981-4-2        2975.0  NULL    20
+7654    MARTIN  SALESMAN        7698    1981-9-28       1250.0  1400.0  30
+7698    BLAKE   MANAGER 7839    1981-5-1        2850.0  NULL    30
+7782    CLARK   MANAGER 7839    1981-6-9        2450.0  NULL    10
+7788    SCOTT   ANALYST 7566    1987-4-19       3000.0  NULL    20
+7839    KING    PRESIDENT       NULL    1981-11-17      5000.0  NULL    10
+7844    TURNER  SALESMAN        7698    1981-9-8        1500.0  0.0     30
+7876    ADAMS   CLERK   7788    1987-5-23       1100.0  NULL    20
+7900    JAMES   CLERK   7698    1981-12-3       950.0   NULL    30
+7902    FORD    ANALYST 7566    1981-12-3       3000.0  NULL    20
+7934    MILLER  CLERK   7782    1982-1-23       1300.0  NULL    10
+Time taken: 1.121 seconds, Fetched: 14 row(s)
+hive (default)> select empno,ename from emp;
+OK
+empno   ename
+7369    SMITH
+7499    ALLEN
+7521    WARD
+7566    JONES
+7654    MARTIN
+7698    BLAKE
+7782    CLARK
+7788    SCOTT
+7839    KING
+7844    TURNER
+7876    ADAMS
+7900    JAMES
+7902    FORD
+7934    MILLER
+Time taken: 0.088 seconds, Fetched: 14 row(s)
+hive (default)> 
+```
 
 
 #### 6.1.2 列别名
@@ -2136,6 +2169,28 @@ SELECT [ALL | DISTINCT] select_expr,select_expr,...
 > - 重命名一个列
 > - 便于计算
 > - 紧跟列名,也可以在列名和别名之间加入关键字'AS'
+
+```text
+hive (default)> select ename as name,deptno dn from emp;
+OK
+name    dn
+SMITH   20
+ALLEN   30
+WARD    30
+JONES   20
+MARTIN  30
+BLAKE   30
+CLARK   10
+SCOTT   20
+KING    10
+TURNER  30
+ADAMS   20
+JAMES   30
+FORD    20
+MILLER  10
+Time taken: 0.074 seconds, Fetched: 14 row(s)
+hive (default)> 
+```
 
 #### 6.1.3 算术运算符
 
@@ -2182,6 +2237,27 @@ SELECT [ALL | DISTINCT] select_expr,select_expr,...
     </tr>
 </table>
 
+```text
+hive (default)> select sal,sal+1000 from emp;
+OK
+sal     _c1
+800.0   1800.0
+1600.0  2600.0
+1250.0  2250.0
+2975.0  3975.0
+1250.0  2250.0
+2850.0  3850.0
+2450.0  3450.0
+3000.0  4000.0
+5000.0  6000.0
+1500.0  2500.0
+1100.0  2100.0
+950.0   1950.0
+3000.0  4000.0
+1300.0  2300.0
+Time taken: 0.074 seconds, Fetched: 14 row(s)
+hive (default)> 
+```
 
 #### 6.1.4 常用函数
 
@@ -2192,11 +2268,19 @@ SELECT [ALL | DISTINCT] select_expr,select_expr,...
 > - 求工资的总和sum
 > - 求工资的平均值avg
 
-
 #### 6.1.5 Limit语句
 
 > LIMIT子句用于限制返回的行数
 
+```text
+hive (default)> select * from emp limit 2;
+OK
+emp.empno       emp.ename       emp.job emp.mgr emp.hiredate    emp.sal emp.comm        emp.deptno
+7369    SMITH   CLERK   7902    1980-12-17      800.0   NULL    20
+7499    ALLEN   SALESMAN        7698    1981-2-20       1600.0  300.0   30
+Time taken: 0.057 seconds, Fetched: 2 row(s)
+hive (default)> 
+```
 
 ### 6.2 Where语句
 
@@ -2279,7 +2363,64 @@ SELECT [ALL | DISTINCT] select_expr,select_expr,...
     </tr>
 </table>
 
+```text
+hive (default)> select * from emp where sal between 1000 and 1600;
+OK
+emp.empno       emp.ename       emp.job emp.mgr emp.hiredate    emp.sal emp.comm        emp.deptno
+7499    ALLEN   SALESMAN        7698    1981-2-20       1600.0  300.0   30
+7521    WARD    SALESMAN        7698    1981-2-22       1250.0  500.0   30
+7654    MARTIN  SALESMAN        7698    1981-9-28       1250.0  1400.0  30
+7844    TURNER  SALESMAN        7698    1981-9-8        1500.0  0.0     30
+7876    ADAMS   CLERK   7788    1987-5-23       1100.0  NULL    20
+7934    MILLER  CLERK   7782    1982-1-23       1300.0  NULL    10
+Time taken: 0.077 seconds, Fetched: 6 row(s)
+hive (default)> 
+hive (default)> select null=null;
+OK
+_c0
+NULL
+Time taken: 0.692 seconds, Fetched: 1 row(s)
+hive (default)> select null<=> null;
+OK
+_c0
+true
+Time taken: 0.072 seconds, Fetched: 1 row(s)
+hive (default)> 
+```
+
 #### 6.2.2 Like和RLike
+
+> 说明
+> - 使用LIKE运算选择类似的值
+> - 选择条件可以包含字符或数字
+>   - % 代表零个或多个字符(任意个字符)
+>   - _ 代表一个字符
+> - RLIKE子句是Hive中这个功能的一个扩展,其可以通过Java的正则表达式这个更强大的语言来指定匹配条件
+
+```text
+hive (default)> select 'ab' like 'a_';
+OK
+_c0
+true
+Time taken: 0.079 seconds, Fetched: 1 row(s)
+hive (default)> select 'abc' like 'a_';
+OK
+_c0
+false
+Time taken: 0.076 seconds, Fetched: 1 row(s)
+hive (default)> select 'abc' like 'a%';
+OK
+_c0
+true
+Time taken: 0.123 seconds, Fetched: 1 row(s)
+hive (default)> select 'abc' rlike 'a*';
+OK
+_c0
+true
+Time taken: 0.08 seconds, Fetched: 1 row(s)
+hive (default)> 
+```
+
 
 #### 6.2.3 逻辑运算符(and/or/not)    
 
@@ -2321,6 +2462,29 @@ SELECT [ALL | DISTINCT] select_expr,select_expr,...
 
 > Hive支持通常的SQL JOIN语句,但是只支持等值连接,不支持非等值连接
 
+> 根据员工表和部门表中的部门编号相等,查询员工编号,员工名称和部门名称
+
+```text
+hive (default)> select e.empno, e.ename, d.deptno, d.dname from emp e join dept d on e.deptno = d.deptno;
+e.empno e.ename d.deptno        d.dname
+7369    SMITH   20      RESEARCH
+7499    ALLEN   30      SALES
+7521    WARD    30      SALES
+7566    JONES   20      RESEARCH
+7654    MARTIN  30      SALES
+7698    BLAKE   30      SALES
+7782    CLARK   10      ACCOUNTING
+7788    SCOTT   20      RESEARCH
+7839    KING    10      ACCOUNTING
+7844    TURNER  30      SALES
+7876    ADAMS   20      RESEARCH
+7900    JAMES   30      SALES
+7902    FORD    20      RESEARCH
+7934    MILLER  10      ACCOUNTING
+Time taken: 27.165 seconds, Fetched: 14 row(s)
+hive (default)> 
+```
+
 #### 6.4.2 表的别名
 
 > 说明
@@ -2331,22 +2495,55 @@ SELECT [ALL | DISTINCT] select_expr,select_expr,...
 
 > 内连接:只有进行连接的两个表中都存在与连接条件相匹配的数据才会被保留下来
 
+```text
+hive (default)> select e.empno, e.ename, d.deptno from emp e join dept d on e.deptno = d.deptno;
+```
+
 #### 6.4.4 左外连接
 
 > 左外连接:JOIN操作符左边表中符合WHERE子句的所有记录将会被返回
 
+```text
+hive (default)> select e.empno, e.ename, d.deptno from emp e left join dept d on e.deptno = d.deptno;
+```
 
 #### 6.4.5 右外连接
 
 > 右外连接:JOIN操作符右边表中符合WHERE子句的所有记录将会被返回
 
+```text
+hive (default)> select e.empno, e.ename, d.deptno from emp e right join dept d on e.deptno = d.deptno;
+```
+
 #### 6.4.6 满外连接
 
 > 满外连接:将会返回所有表中符合WHERE语句条件的所有记录.如果任一表的指定字段没有符合条件的值的话,那么就使用NULL值替代
 
+```text
+hive (default)> select e.empno, e.ename, d.deptno from emp e full join dept d on e.deptno = d.deptno;
+```
+
 #### 6.4.7 多表连接
 
 > 连接n个表,至少需要n-1个连接条件.例如:连接三个表,至少需要两个连接条件
+
+> - 创建表
+> - 导入数据
+> - 多表连接查询
+
+```hiveql
+create table if not exists location (
+    loc int,
+    loc_name string
+)
+row format delimited fields terminated by "\t";
+
+load data local inpath '/opt/module/datas/location.txt' into table location;
+```
+
+```text
+hive (default)> select e.ename, d.deptno, l.loc_name from emp e join dept d on d.deptno = e.deptno join location l on d.loc = l.loc;
+```
 
 #### 6.4.8 笛卡尔积
 
@@ -2355,9 +2552,25 @@ SELECT [ALL | DISTINCT] select_expr,select_expr,...
 > - 连接条件无效
 > - 所有表中的所有行互相连接
 
+```text
+hive (default)> select empno,dname from emp,dept;
+```
+
 #### 6.4.9 连接谓词中不支持or
 
-> select e.empno, e.ename, d.deptno from emp e join dept d on e.deptno = d.deptno or e.ename=d.ename;   就是错误的
+```text
+hive (default)> select e.empno, e.ename, d.deptno from emp e join dept d on e.deptno = d.deptno or e.ename=d.dname;
+FAILED: SemanticException [Error 10019]: Line 1:60 OR not supported in JOIN currently 'ename'
+```
+
+> 以上可以替换为union
+
+```text
+hive (default)> select e.empno, e.ename, d.deptno from emp e join dept d on e.deptno = d.deptno 
+              > union 
+              > select e.empno, e.ename, d.deptno from emp e join dept d on e.ename = d.dname;
+```
+
 
 ### 6.5 排序
 
@@ -2369,14 +2582,51 @@ SELECT [ALL | DISTINCT] select_expr,select_expr,...
 >   - DESC(descend):降序
 > - ORDER BY 子句在SELECT语句的结尾
 
+
+> 案例
+> - 查询员工信息按工资升序排列
+> - 查询员工信息按工资降序排列
+
+```text
+hive (default)> select * from emp order by sal;
+hive (default)> select * from emp order by sal desc;
+```
+
 #### 6.5.2 按照别名排序
+
+> 按照员工薪水的2倍排序
+
+```text
+hive (default)> select ename, sal*2 2sal from emp order by 2sal;
+```
 
 #### 6.5.3 多个列排序
 
+> 按照部门和工资升序排序
+
+```text
+hive (default)> select ename, deptno, sal from emp order by deptno,sal;
+```
 
 #### 6.5.4 每个MapReduce内部排序(sort by)
 
 > sort by:每个reducer内部进行排序,对全局结果集来说不是排序
+> - 只有1个reduce,那么和order by结果一样
+> - 多个reduce是随机的保证每个reduce中有序.
+
+> 案例:
+> - 设置reduce个数
+> - 查看设置reduce个数
+> - 根据部门编号降序查看员工信息
+> - 将查询结果导入到文件中(按照部门编号降序排序)
+
+```text
+hive (default)> set mapreduce.job.reduces=3;
+hive (default)> set mapreduce.job.reduces;
+hive (default)> select * from emp sort by empno desc;
+hive (default)> insert overwrite local directory '/opt/module/datas/sortby-result' select * from emp sort by deptno desc;
+```
+
 
 #### 6.5.5 分区排序(distribute By)
 
@@ -2385,11 +2635,23 @@ SELECT [ALL | DISTINCT] select_expr,select_expr,...
 
 > 对于distribute by进行测试,一定要分配多reduce进行处理,否则无法看到distribute by的效果
 
+> 案例:
+> - 先按照部门编号分区，再按照员工编号降序排序
+
+```text
+hive (default)> set mapreduce.job.reduces=3;
+hive (default)> insert overwrite local directory '/opt/module/datas/distribute-result' select * from emp distribute by deptno sort by empno desc;
+```
 
 #### 6.5.6 cluster by
 
 > 当distribute by和sorts by字段相同时,可以使用cluster by方式<br>
 > cluster by除了具有distribute by的功能外还兼具sort by的功能.但是排序只能是升序排序,不能指定排序规则为ASC或者DESC
+
+```text
+hive (default)> select * from emp cluster by deptno;
+hive (default)> select * from emp distribute by deptno sort by deptno;
+```
 
 ### 6.6 分桶及抽样查询
 #### 6.6.1 分桶表数据存储
