@@ -1928,32 +1928,60 @@ load data local inpath '/opt/module/datas/student.txt' overwrite into table stud
 
 ```
 
-> - 操作过程
-
-```shell script
-
-```
-
 #### 5.1.2 通过查询语句向表中插入数据(insert)
 
 > 案例
 > - 创建一张分区表,基本插入数据,基本模式插入(根据单张表查询结果),多插入模式(根据多张表查询结果)
 
 ```hiveql
-create table  student(id int,name string) partitioned by(month string) row format delimited fields terminated by "\t";
+create table  student_partition (id int,name string) partitioned by(month string) row format delimited fields terminated by "\t";
+insert into table student_partition partition (month='201709') values (1,"wang wu");
 
-insert into table student partition (month='201709') values (1,"wang wu");
+insert overwrite table student_partition partition(month='201708') select id,name from student_partition where month='201709';
 
-insert overwrite table student partition(month='201708') select id,name from student where month='201709';
-
-from student  insert overwrite table student partition (month='201707') select id,name where month='201709' insert overwrite table student partition (month='201706') select id,name where month='201709'  
+from student_partition  insert overwrite table student_partition partition (month='201707') select id,name where month='201709' insert overwrite table student_partition partition (month='201706') select id,name where month='201709';  
 
 ```
 
 > 操作过程
 
 ```shell script
-
+hive (default)> create table  student_partition (id int,name string) partitioned by(month string) row format delimited fields terminated by "\t";
+OK
+Time taken: 0.145 seconds
+hive (default)> insert into table student_partition partition (month='201709') values (1,"wang wu");
+hive (default)> select * from student_partition;
+OK
+student_partition.id    student_partition.name  student_partition.month
+1       wang wu 201709
+Time taken: 0.093 seconds, Fetched: 1 row(s)
+hive (default)> insert overwrite table student_partition partition(month='201708') select id,name from student_partition where month='201709';
+hive (default)> select * from student;
+OK
+student.id      student.name
+1001    zhangsan
+1002    lishi
+1003    zhaoliu
+1001    zhangsan
+1002    lishi
+1003    zhaoliu
+Time taken: 0.06 seconds, Fetched: 6 row(s)
+hive (default)> select *from student_partition;
+OK
+student_partition.id    student_partition.name  student_partition.month
+1       wang wu 201708
+1       wang wu 201709
+Time taken: 0.059 seconds, Fetched: 2 row(s)
+hive (default)> from student_partition  insert overwrite table student_partition partition (month='201707') select id,name where month='201709' insert overwrite table student_partition partition (month='201706') select id,name where month='201709' ;
+hive (default)> select *from student_partition;
+OK
+student_partition.id    student_partition.name  student_partition.month
+1       wang wu 201706
+1       wang wu 201707
+1       wang wu 201708
+1       wang wu 201709
+Time taken: 0.078 seconds, Fetched: 4 row(s)
+hive (default)> 
 ```
 
 
@@ -1974,18 +2002,29 @@ create table if not exists student3 as select id,name from student;
 
 ```hiveql
 
-create table if not exists student5 (id int,name string) row format delimited fields terminated by "\t" location '/user/hive/warehouse/student5';
+create table if not exists student6 (id int,name string) row format delimited fields terminated by "\t" location '/user/hive/warehouse/student6';
 
-dfs -put /opt/module/datas/student.txt /user/hive/warehouse/student5;
+dfs -put /opt/module/datas/student.txt /user/hive/warehouse/student6;
 
-select * from student5;
+select * from student6;
 
 ```
 
 > 操作过程
 
 ```shell script
-
+hive (default)> create table if not exists student6 (id int,name string) row format delimited fields terminated by "\t" location '/user/hive/warehouse/student6';
+OK
+Time taken: 0.048 seconds
+hive (default)> dfs -put /opt/module/datas/student.txt /user/hive/warehouse/student6;
+hive (default)> select * from student6;
+OK
+student6.id     student6.name
+1001    zhangsan
+1002    lishi
+1003    zhaoliu
+Time taken: 0.051 seconds, Fetched: 3 row(s)
+hive (default)> 
 ```
 
 
@@ -2008,12 +2047,13 @@ import table student2 partition (month='201709') from '/user/hive/warehouse/expo
 > - 将查询的结果导出到HDFS上
 
 ```hiveql
+create table if not exists student7 (id int,name string) row format delimited fields terminated by "\t";
 
-insert overwrite local directory '/opt/module/datas/export/student' select * from student;
+insert overwrite local directory '/opt/module/datas/export/student' select * from student7;
 
-insert overwrite local directory '/opt/module/datas/export/student' ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t'  select * from student;
+insert overwrite local directory '/opt/module/datas/export/student' ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t'  select * from student7;
 
-insert overwrite directory '/user/atguigu/student2' ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' select * from student;
+insert overwrite directory '/user/atguigu/student2' ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' select * from student7;
 
 ```
 
@@ -2042,7 +2082,7 @@ dfs -get /user/hive/warehouse/student/month=201709/000000_0 /opt/module/datas/ex
 
 #### 5.2.4 Export导出到HDFS上
 
-```hiveql
+```text
 export table default.student to '/user/hive/warehouse/export/student';
 ```
 
@@ -2054,7 +2094,7 @@ export table default.student to '/user/hive/warehouse/export/student';
 
 > truncate只能删除管理表,不能删除外部表中数据
 
-```hiveql
+```text
 truncate table student;
 ```
 
@@ -2077,3 +2117,350 @@ SELECT [ALL | DISTINCT] select_expr,select_expr,...
 
 ### 6.1 基本查询(select...from)
 #### 6.1.1 全表和特定列查询
+
+> 注意事项
+> - SQL 语言大小写不敏感
+> - SQL 可以写在一行或者多行
+> - 关键字不能被缩写也不能分行
+> - 各子句一般要分行写
+> - 使用缩进提高语句的可读性
+
+> 1. 全表查询
+> 2. 选择特定列查询
+
+
+
+#### 6.1.2 列别名
+
+> 说明
+> - 重命名一个列
+> - 便于计算
+> - 紧跟列名,也可以在列名和别名之间加入关键字'AS'
+
+#### 6.1.3 算术运算符
+
+<table>
+    <tr>
+        <th>运算符</th>
+        <th>关键字</th>
+    </tr>
+    <tr>
+        <th>A+B</th>
+        <th>A和B相加</th>
+    </tr>
+    <tr>
+        <th>A-B</th>
+        <th>A减去B</th>
+    </tr>
+    <tr>
+        <th>A*B</th>
+        <th>A乘以B</th>
+    </tr>
+    <tr>
+        <th>A/B</th>
+        <th>A除以B</th>
+    </tr>
+    <tr>
+        <th>A%B</th>
+        <th>A对B取余</th>
+    </tr>
+    <tr>
+        <th>A&B</th>
+        <th>A和B按位取与</th>
+    </tr>
+    <tr>
+        <th>A|B</th>
+        <th>A和B按位取或</th>
+    </tr>
+    <tr>
+        <th>A^B</th>
+        <th>A和B按位取异或</th>
+    </tr>
+    <tr>
+        <th>~A</th>
+        <th>A按位取反</th>
+    </tr>
+</table>
+
+
+#### 6.1.4 常用函数
+
+> 常用函数
+> - 求总行数count
+> - 求工资的最大值max
+> - 求工资的最小值min
+> - 求工资的总和sum
+> - 求工资的平均值avg
+
+
+#### 6.1.5 Limit语句
+
+> LIMIT子句用于限制返回的行数
+
+
+### 6.2 Where语句
+
+> - 使用WHERE子句,将不满足条件的行过滤掉
+> - WHERE子句紧随FROM子句
+
+#### 6.2.1 比较运算符(between/in/is null)
+
+> 表中描述了谓词操作符,这些操作符同样可以用于JOIN…ON和HAVING语句中
+
+<table>
+    <tr>
+        <th>操作符</th>
+        <th>支持的数据类型</th>
+        <th>描述</th>
+    </tr>
+    <tr>
+        <th>A=B</th>
+        <th>基本数据类型</th>
+        <th>如果A等于B则返回TRUE,反之返回FALSE</th>
+    </tr>
+    <tr>
+        <th>A<>B,A!=B</th>
+        <th>基本数据类型</th>
+        <th>A或者B为NULL则返回NULL;如果A不等于B,则返回TRUE,反之返回FALSE</th>
+    </tr>
+    <tr>
+        <th>A<=>B</th>
+        <th>基本数据类型</th>
+        <th>如果A和B都为NULL,则返回TRUE,其他的和等号(=)操作符的结果一致,如果任一为NULL则结果为NULL</th>
+    </tr>
+    <tr>
+        <th>A&ltB</th>
+        <th>基本数据类型</th>
+        <th>A或者B为NULL,则返回NULL;如果A小于B,则返回TRUE,反之返回FALSE</th>
+    </tr>
+    <tr>
+        <th>A<=B</th>
+        <th>基本数据类型</th>
+        <th>A或者B为NULL,则返回NULL;如果A小于等于B,则返回TRUE,反之返回FALSE</th>
+    </tr>
+    <tr>
+        <th>A>B</th>
+        <th>基本数据类型</th>
+        <th>A或者B为NULL,则返回NULL;如果A大于B,则返回TRUE,反之返回FALSE</th>
+    </tr>
+    <tr>
+        <th>A>=B</th>
+        <th>基本数据类型</th>
+        <th>A或者B为NULL,则返回NULL;如果A大于等于B,则返回TRUE,反之返回FALSE</th>
+    </tr>
+    <tr>
+        <th>A [NOT] BETWEEN B AND C</th>
+        <th>基本数据类型</th>
+        <th>如果A,B或者C任一为NULL,则结果为NULL.如果A的值大于等于B而且小于或等于C,则结果为TRUE,反之为FALSE.如果使用NOT关键字则可达到相反的效果</th>
+    </tr>
+    <tr>
+        <th>A IS NULL</th>
+        <th>所有数据类型</th>
+        <th>如果A等于NULL,则返回TRUE,反之返回FALSE</th>
+    <tr>
+        <th>A IS NOT NULL</th>
+        <th>所有数据类型</th>
+        <th>如果A不等于NULL,则返回TRUE,反之返回FALSE</th>
+    </tr>
+    <tr>
+        <th>IN(数值1,,数值2)</th>
+        <th>所有数据类型</th>
+        <th>使用IN运算显示列表中的值</th>
+    </tr>
+    <tr>
+        <th>A [NOT] LIKE B</th>
+        <th>STRING 类型</th>
+        <th>B是一个SQL下的简单正则表达式,如果A与其匹配的话,则返回TRUE;反之返回FALSE.B的表达式说明如下:'x%'表示A必须以字母'x'开头,'%x'表示A必须以字母'x'结尾,而'%x%'表示A包含有字母'x',可以位于开头,结尾或者字符串中间.如果使用NOT关键字则可达到相反的效果</th>
+    </tr>
+    <tr>
+        <th>A RLIKE B, A REGEXP B</th>
+        <th>STRING 类型</th>
+        <th>B是一个正则表达式,如果A与其匹配,则返回TRUE;反之返回FALSE.匹配使用的是JDK中的正则表达式接口实现的,因为正则也依据其中的规则.例如,正则表达式必须和整个字符串A相匹配,而不是只需与其字符串匹配</th>
+    </tr>
+</table>
+
+#### 6.2.2 Like和RLike
+
+#### 6.2.3 逻辑运算符(and/or/not)    
+
+<table>
+    <tr>
+        <th>操作符</th>
+        <th>含义</th>
+    </tr>
+    <tr>
+        <th>AND</th>
+        <th>逻辑并</th>
+    </tr>
+    <tr>
+        <th>OR</th>
+        <th>逻辑或</th>
+    </tr>
+    <tr>
+        <th>NOT</th>
+        <th>逻辑否</th>
+    </tr>
+</table>
+
+
+### 6.3 分组
+
+> GROUP BY语句通常会和聚合函数一起使用,按照一个或者多个列队结果进行分组,然后对每个组执行聚合操作
+
+#### 6.3.2 Having语句
+
+> having与where不同点
+> - where针对表中的列发挥作用,查询数据,having针对查询结果中的列发挥作用,筛选数据.
+> - where后面不能写分组函数,而having后面可以使用分组函数
+> - having只用于group by分组统计语句
+
+
+### 6.4 Join语句
+
+#### 6.4.1 等值Join
+
+> Hive支持通常的SQL JOIN语句,但是只支持等值连接,不支持非等值连接
+
+#### 6.4.2 表的别名
+
+> 说明
+> - 使用别名可以简化查询
+> - 使用表名前缀可以提高执行效率
+
+#### 6.4.3 内连接
+
+> 内连接:只有进行连接的两个表中都存在与连接条件相匹配的数据才会被保留下来
+
+#### 6.4.4 左外连接
+
+> 左外连接:JOIN操作符左边表中符合WHERE子句的所有记录将会被返回
+
+
+#### 6.4.5 右外连接
+
+> 右外连接:JOIN操作符右边表中符合WHERE子句的所有记录将会被返回
+
+#### 6.4.6 满外连接
+
+> 满外连接:将会返回所有表中符合WHERE语句条件的所有记录.如果任一表的指定字段没有符合条件的值的话,那么就使用NULL值替代
+
+#### 6.4.7 多表连接
+
+> 连接n个表,至少需要n-1个连接条件.例如:连接三个表,至少需要两个连接条件
+
+#### 6.4.8 笛卡尔积
+
+> 笛卡尔集会在下面条件下产生
+> - 省略连接条件
+> - 连接条件无效
+> - 所有表中的所有行互相连接
+
+#### 6.4.9 连接谓词中不支持or
+
+> select e.empno, e.ename, d.deptno from emp e join dept d on e.deptno = d.deptno or e.ename=d.ename;   就是错误的
+
+### 6.5 排序
+
+#### 6.5.1 全局排序
+
+> order by:全局排序,一个reducer
+> - 使用ORDER BY子句排序
+>   - ASC(ascend):升序(默认)
+>   - DESC(descend):降序
+> - ORDER BY 子句在SELECT语句的结尾
+
+#### 6.5.2 按照别名排序
+
+#### 6.5.3 多个列排序
+
+
+#### 6.5.4 每个MapReduce内部排序(sort by)
+
+> sort by:每个reducer内部进行排序,对全局结果集来说不是排序
+
+#### 6.5.5 分区排序(distribute By)
+
+> distribute by:类似MR中partition,进行分区,结合sort by使用<br>
+> Hive要求distribute by语句要写在sort by语句之前
+
+> 对于distribute by进行测试,一定要分配多reduce进行处理,否则无法看到distribute by的效果
+
+
+#### 6.5.6 cluster by
+
+> 当distribute by和sorts by字段相同时,可以使用cluster by方式<br>
+> cluster by除了具有distribute by的功能外还兼具sort by的功能.但是排序只能是升序排序,不能指定排序规则为ASC或者DESC
+
+### 6.6 分桶及抽样查询
+#### 6.6.1 分桶表数据存储
+
+> 分通与分区
+> - 分区针对的是数据的存储路径,分桶针对的是数据文件
+> - 分区提供一个隔离数据和优化查询的便利方式
+> - 分桶是将数据集分解成更容易管理的若干部分的另一个技术
+
+
+#### 6.6.2 分桶抽样查询
+
+
+
+
+### 6.7 其他常用查询函数
+#### 6.7.1 空字段赋值
+
+> NVL:给值为NULL的数据赋值,它的格式是NVL(string1,replace_with)
+> - 如果string1为NULL,则NVL函数返回replace_with的值,否则返回string1的值.
+> - 如果两个参数都为NULL,则返回NULL
+
+
+#### 6.7.2 CASE WHEN
+
+
+#### 6.7.3 行转列
+
+> CONCAT(string A/col, string B/col…):返回输入字符串连接后的结果,支持任意个输入字符串
+
+> CONCAT_WS(separator, str1, str2,...):它是一个特殊形式的CONCAT()
+> - 第一个参数剩余参数间的分隔符,分隔符可以是与剩余参数一样的字符串.如果分隔符是NULL,返回值也将为NULL.
+> - 这个函数会跳过分隔符参数后的任何 NULL 和空字符串.分隔符将被加到被连接的字符串之间
+
+> COLLECT_SET(col):函数只接受基本数据类型,它的主要作用是将某字段的值进行去重汇总,产生array类型字段
+
+
+#### 6.7.3 列转行
+
+> EXPLODE(col):将hive一列中复杂的array或者map结构拆分成多行
+
+> LATERAL VIEW
+> - 用法:LATERAL VIEW udtf(expression) tableAlias AS columnAlias
+> - 解释:用于和split, explode等UDTF一起使用,它能够将一列数据拆成多行数据,在此基础上可以对拆分后的数据进行聚合
+
+#### 6.7.4 窗口函数
+
+> 相关函数说明
+> - OVER():指定分析函数工作的数据窗口大小,这个数据窗口大小可能会随着行的变而变化
+> - CURRENT ROW:当前行
+> - n PRECEDING:往前n行数据
+> - n FOLLOWING:往后n行数据
+> - UNBOUNDED:起点,UNBOUNDED PRECEDING 表示从前面的起点,UNBOUNDED FOLLOWING表示到后面的终点
+> - LAG(col,n):往前第n行数据
+> - LEAD(col,n):往后第n行数据
+> - NTILE(n):把有序分区中的行分发到指定数据的组中,各个组有编号,编号从1开始,对于每一行,NTILE返回此行所属的组的编号
+
+#### 6.7.5 Rank
+
+> 函数说明
+> - RANK() 排序相同时会重复,总数不会变
+> - DENSE_RANK() 排序相同时会重复,总数会减少
+> - ROW_NUMBER() 会根据顺序计算
+
+
+
+
+
+
+
+
+
+
+
