@@ -2661,10 +2661,165 @@ hive (default)> select * from emp distribute by deptno sort by deptno;
 > - 分区提供一个隔离数据和优化查询的便利方式
 > - 分桶是将数据集分解成更容易管理的若干部分的另一个技术
 
+> 先创建分桶表,通过直接导入数据文件的方式
+> - 数据准备,student.txt
+> - 创建分桶表
+> - 查看表结构
+> - 导入数据到分桶表中
+> - 查看创建的分桶表中是否分成4个桶(通过http://hadoop100:50070/)
+
+```hiveql
+create table stu_buck(id int, name string)
+clustered by(id) 
+into 4 buckets
+row format delimited fields terminated by '\t';
+
+desc formatted stu_buck;
+
+load data local inpath '/opt/module/datas/student.txt' into table stu_buck;
+```
+
+```shell script
+hive (default)> create table stu_buck(id int, name string)
+              > clustered by(id) 
+              > into 4 buckets
+              > row format delimited fields terminated by '\t';
+OK
+hive (default)> desc formatted stu_buck;
+Num Buckets:            4                        
+hive (default)> load data local inpath '/opt/module/datas/student.txt' into table stu_buck;
+hive (default)>
+hive (default)> select * from stu_buck;
+OK
+stu_buck.id     stu_buck.name
+1001    ss1
+1002    ss2
+1003    ss3
+1004    ss4
+1005    ss5
+1006    ss6
+1007    ss7
+1008    ss8
+1009    ss9
+1010    ss10
+1011    ss11
+1012    ss12
+1013    ss13
+1014    ss14
+1015    ss15
+1016    ss16
+Time taken: 0.241 seconds, Fetched: 16 row(s)
+hive (default)>
+```
+
+![查看分桶表文件](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q0GMGGibYP8NX3tia6Obic6z7aKaibo9vFTVxRicFmgtbZ6D5VP3VoiabUWYjtiaZbaicbc16x9qQSNjSXnqg/0?wx_fmt=png)
+
+> 创建分桶表时,数据通过子查询的方式导入
+> - 先建一个普通的stu表
+> - 向普通的stu表中导入数据
+> - 清空stu_buck表中数据
+> - 导入数据到分桶表,通过子查询的方式
+> - 需要设置一个属性(否则还是一个分桶)
+> - 查询分桶的数据
+
+```hiveql
+create table stu(id int, name string)
+row format delimited fields terminated by '\t';
+
+load data local inpath '/opt/module/datas/student.txt' into table stu;
+
+set hive.enforce.bucketing=true;
+set mapreduce.job.reduces=-1; -- 默认
+
+```
+
+```shell script
+hive (default)> create table stu(id int, name string)
+              > row format delimited fields terminated by '\t';
+OK
+Time taken: 0.066 seconds
+hive (default)> load data local inpath '/opt/module/datas/student.txt' into table stu;
+Loading data to table default.stu
+Table default.stu stats: [numFiles=1, totalSize=165]
+OK
+Time taken: 0.245 seconds
+hive (default)> select * from stu;
+OK
+stu.id  stu.name
+1001    ss1
+1002    ss2
+1003    ss3
+1004    ss4
+1005    ss5
+1006    ss6
+1007    ss7
+1008    ss8
+1009    ss9
+1010    ss10
+1011    ss11
+1012    ss12
+1013    ss13
+1014    ss14
+1015    ss15
+1016    ss16
+Time taken: 0.068 seconds, Fetched: 16 row(s)
+hive (default)> 
+hive (default)> set hive.enforce.bucketing=true;
+hive (default)> insert into table stu_buck
+              > select id, name from stu;
+hive (default)> select * from stu_buck;
+OK
+stu_buck.id     stu_buck.name
+1016    ss16
+1012    ss12
+1008    ss8
+1004    ss4
+1009    ss9
+1005    ss5
+1001    ss1
+1013    ss13
+1010    ss10
+1002    ss2
+1006    ss6
+1014    ss14
+1003    ss3
+1011    ss11
+1007    ss7
+1015    ss15
+Time taken: 0.038 seconds, Fetched: 16 row(s)
+hive (default)> 
+```
+
+![分桶表](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q0GMGGibYP8NX3tia6Obic6z7ar96Mp6Cud90xNbMhmWu4MQicZ0fsYkbNc5wfoLNlGzibYC4WzZkvcbgA/0?wx_fmt=png)
+
 
 #### 6.6.2 分桶抽样查询
 
+> 对于非常大的数据集,有时用户需要使用的是一个具有代表性的查询结果而不是全部结果,Hive可以通过对表进行抽样来满足这个需求
 
+> 查询抽样的数据
+> - tablesample是抽样语句,语法:TABLESAMPLE(BUCKET x OUT OF y)
+>   - y必须是table总bucket数的倍数或者因子.
+>   - hive根据y的大小,决定抽样的比例.
+>   - x表示从哪个bucket开始抽取,如果需要取多个分区,以后的分区号为当前分区号加上y
+>   - x的值必须小于等于y的值 
+ 
+> 例如
+> - table总bucket数为4,当y=2时,抽取(4/2=)2个bucket的数据,当y=8时,抽取(4/8=)1/2个bucket的数据 
+> - table总bucket数为4,tablesample(bucket 1 out of 2),表示总共抽取4/2=)2个bucket的数据,抽取第1(x)个和第3(x+y)个bucket的数据
+
+
+```shell script
+hive (default)> select * from stu_buck tablesample(bucket 1 out of 4 on id);
+OK
+stu_buck.id     stu_buck.name
+1016    ss16
+1012    ss12
+1008    ss8
+1004    ss4
+Time taken: 0.165 seconds, Fetched: 4 row(s)
+hive (default)> 
+```
 
 
 ### 6.7 其他常用查询函数
