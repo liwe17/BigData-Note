@@ -2808,6 +2808,7 @@ hive (default)>
 > - table总bucket数为4,当y=2时,抽取(4/2=)2个bucket的数据,当y=8时,抽取(4/8=)1/2个bucket的数据 
 > - table总bucket数为4,tablesample(bucket 1 out of 2),表示总共抽取4/2=)2个bucket的数据,抽取第1(x)个和第3(x+y)个bucket的数据
 
+> 从第一个桶开始抽取,抽取(4/4)1个数据
 
 ```shell script
 hive (default)> select * from stu_buck tablesample(bucket 1 out of 4 on id);
@@ -2819,6 +2820,13 @@ stu_buck.id     stu_buck.name
 1004    ss4
 Time taken: 0.165 seconds, Fetched: 4 row(s)
 hive (default)> 
+hive (default)> select * from stu_buck tablesample(bucket 1 out of 8 on id);
+OK
+stu_buck.id     stu_buck.name
+1016    ss16
+1008    ss8
+Time taken: 0.05 seconds, Fetched: 2 row(s)
+hive (default)> 
 ```
 
 
@@ -2829,9 +2837,57 @@ hive (default)>
 > - 如果string1为NULL,则NVL函数返回replace_with的值,否则返回string1的值.
 > - 如果两个参数都为NULL,则返回NULL
 
+> 员工表
+> - 如果员工的comm为NULL,则用-1代替
+> - 如果员工的comm为NULL,则用领导id代替
+```shell script
+hive (default)> select nvl(comm,-1) from emp;
+hive (default)> select nvl(comm,mgr) from emp;
+```
 
 #### 6.7.2 CASE WHEN
 
+> 案例
+> - 数据准备,emp_sex.txt
+> - 求出不同部门男女各多少人,结果如下
+
+<table>
+    <tr>
+        <th>dept_id</th>
+        <th>sex</th>
+        <th>num</th>
+    </tr>
+    <tr>
+        <th>A</th>
+        <th>2</th>
+        <th>1</th>
+    </tr>
+    <tr>
+        <th>B</th>
+        <th>1</th>
+        <th>2</th>
+    </tr>
+</table>
+
+```hiveql
+create table emp_sex(
+name string,
+dept_id string,
+sex string
+)
+row format delimited fields terminated by "\t";
+
+load data local inpath '/opt/module/datas/emp_sex.txt' into table emp_sex;
+
+select 
+  dept_id,
+  sum(case sex when '男' then 1 else 0 end) male_count,
+  sum(case sex when '女' then 1 else 0 end) female_count
+from 
+  emp_sex
+group by
+  dept_id;
+```
 
 #### 6.7.3 行转列
 
@@ -2843,6 +2899,46 @@ hive (default)>
 
 > COLLECT_SET(col):函数只接受基本数据类型,它的主要作用是将某字段的值进行去重汇总,产生array类型字段
 
+> 案例
+> - 数据准备,person_info.txt
+> - 把星座和血型一样的人归类到一起,结果如下
+
+<table>
+    <tr>
+        <th>星座|班级</th>
+        <th>姓名</th>
+    </tr>
+    <tr>
+        <th>射手座|A</th>
+        <th>大海|凤姐</th>
+    </tr>
+    <tr>
+        <th>白羊座|A</th>
+        <th>孙悟空|猪八戒</th>
+    </tr>
+    <tr>
+        <th>白羊座|B</th>
+        <th>宋宋</th>
+    </tr>
+</table>
+
+```hiveql
+create table person_info(
+name string,constellation string,blood_type string
+)
+row format delimited fields terminated by "\t";
+
+load data local inpath '/opt/module/datas/person_info.txt' into table person_info;
+
+select 
+    t.base,concat_ws('|',collect_set(t.name)) 
+from 
+    (select 
+        name,concat(constellation,'|','blood_type') as base 
+    from person_info
+    ) t
+group by t.base;
+```
 
 #### 6.7.3 列转行
 
@@ -2851,6 +2947,27 @@ hive (default)>
 > LATERAL VIEW
 > - 用法:LATERAL VIEW udtf(expression) tableAlias AS columnAlias
 > - 解释:用于和split, explode等UDTF一起使用,它能够将一列数据拆成多行数据,在此基础上可以对拆分后的数据进行聚合
+
+> 案例
+> - 数据准备,movie_info.txt
+> - 将电影分类中的数组数据展开,结果如下
+
+```hiveql
+create table movie_info(
+movie string,
+category array<string>    
+) 
+row format delimited fields terminated by "\t" 
+collection items terminated by ",";
+
+load data local inpath "/opt/module/datas/movie_info.txt" into table movie_info;
+
+select 
+    movie,category_name 
+from 
+    movie_info 
+lateral view explode(category) table_temp as category_name;
+```
 
 #### 6.7.4 窗口函数
 
