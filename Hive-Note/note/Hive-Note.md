@@ -2934,7 +2934,7 @@ select
     t.base,concat_ws('|',collect_set(t.name)) 
 from 
     (select 
-        name,concat(constellation,'|','blood_type') as base 
+        name,concat(constellation,'|',blood_type) as base 
     from person_info
     ) t
 group by t.base;
@@ -2981,6 +2981,104 @@ lateral view explode(category) table_temp as category_name;
 > - LEAD(col,n):往后第n行数据
 > - NTILE(n):把有序分区中的行分发到指定数据的组中,各个组有编号,编号从1开始,对于每一行,NTILE返回此行所属的组的编号
 
+> 案例
+> - 数据准备business.txt
+
+```text
+name,orderdate,cost
+jack,2017-01-01,10
+tony,2017-01-02,15
+jack,2017-02-03,23
+tony,2017-01-04,29
+jack,2017-01-05,46
+jack,2017-04-06,42
+tony,2017-01-07,50
+jack,2017-01-08,55
+mart,2017-04-08,62
+mart,2017-04-09,68
+neil,2017-05-10,12
+mart,2017-04-11,75
+neil,2017-06-12,80
+mart,2017-04-13,94
+```
+
+> - 需求
+>   - 查询在2017年4月份购买过的顾客及总人数
+>   - 查询顾客的购买明细及月购买总额
+>   - 上述的场景,要将cost按照日期进行累加
+>   - 查询顾客上次的购买时间
+>   - 查询前20%时间的订单信息
+
+```hiveql
+create table business(
+name string, 
+orderdate string,
+cost int
+) ROW FORMAT DELIMITED FIELDS TERMINATED BY ',';
+
+load data local inpath "/opt/module/datas/business.txt" into table business;
+
+-- 查询在2017年4月份购买过的顾客及总人数
+select name,count(*) over() from business where orderdate like '2017-04%' group by name;
+select name,count(*) over () from business where substring(orderdate,1,7) = '2017-04' group by name;
+
+-- 查询顾客的购买明细及月购买总额
+select name,orderdate,cost,sum(cost) over(partition by substr(orderdate,1,7)) from business;
+select name,orderdate,cost,sum(cost) over(partition by month(orderdate)) from business;
+
+-- 上述的场景,要将cost按照日期进行累加
+select name,orderdate,cost,sum(cost) over(partition by name order by orderdate) from business;
+
+select name,orderdate,cost, 
+sum(cost) over() as sample1,--所有行相加 
+sum(cost) over(partition by name) as sample2,--按name分组,组内数据相加 
+sum(cost) over(partition by name order by orderdate) as sample3,--按name分组,组内数据累加 
+sum(cost) over(partition by name order by orderdate rows between UNBOUNDED PRECEDING and current row ) as sample4 ,--和sample3一样,由起点到当前行的聚合 
+sum(cost) over(partition by name order by orderdate rows between 1 PRECEDING and current row) as sample5, --当前行和前面一行做聚合 
+sum(cost) over(partition by name order by orderdate rows between 1 PRECEDING AND 1 FOLLOWING ) as sample6,--当前行和前边一行及后面一行 
+sum(cost) over(partition by name order by orderdate rows between current row and UNBOUNDED FOLLOWING ) as sample7 --当前行及后面所有行 
+from business;
+
+-- 查看顾客上次的购买时间
+select name,orderdate,cost,lag(orderdate,1,'1900-01-01') over (partition by name order by orderdate)from business;
+select name,orderdate,cost,lag(orderdate,1,'1900-01-01') over(partition by name order by orderdate ) as time1, lag(orderdate,2) over (partition by name order by orderdate) as time2 from business;
+
+-- 查询前20%时间的订单信息
+select name,orderdate,ntile(5) over(order by orderdate) as sorted from business;
+select * from (select name,orderdate,ntile(5) over(order by orderdate) as sorted from business) t where sorted=1;
+```
+
+```shell script
+hive (default)> select name,orderdate,cost, 
+              > sum(cost) over() as sample1,--所有行相加 
+              > sum(cost) over(partition by name) as sample2,--按name分组,组内数据相加 
+              > sum(cost) over(partition by name order by orderdate) as sample3,--按name分组,组内数据累加 
+              > sum(cost) over(partition by name order by orderdate rows between UNBOUNDED PRECEDING and current row ) as sample4 ,--和sample3一样,由起点到当前行的聚合 
+              > sum(cost) over(partition by name order by orderdate rows between 1 PRECEDING and current row) as sample5, --当前行和前面一行做聚合 
+              > sum(cost) over(partition by name order by orderdate rows between 1 PRECEDING AND 1 FOLLOWING ) as sample6,--当前行和前边一行及后面一行 
+              > sum(cost) over(partition by name order by orderdate rows between current row and UNBOUNDED FOLLOWING ) as sample7 --当前行及后面所有行 
+              > from business;
+name    orderdate       cost    sample1 sample2 sample3 sample4 sample5 sample6 sample7
+jack    2017-01-01      10      661     176     10      10      10      56      176
+jack    2017-01-05      46      661     176     56      56      56      111     166
+jack    2017-01-08      55      661     176     111     111     101     124     120
+jack    2017-02-03      23      661     176     134     134     78      120     65
+jack    2017-04-06      42      661     176     176     176     65      65      42
+mart    2017-04-08      62      661     299     62      62      62      130     299
+mart    2017-04-09      68      661     299     130     130     130     205     237
+mart    2017-04-11      75      661     299     205     205     143     237     169
+mart    2017-04-13      94      661     299     299     299     169     169     94
+neil    2017-05-10      12      661     92      12      12      12      92      92
+neil    2017-06-12      80      661     92      92      92      92      92      80
+tony    2017-01-02      15      661     94      15      15      15      44      94
+tony    2017-01-04      29      661     94      44      44      44      94      79
+tony    2017-01-07      50      661     94      94      94      79      79      50
+Time taken: 51.434 seconds, Fetched: 14 row(s)
+hive (default)> 
+```
+
+
+
 #### 6.7.5 Rank
 
 > 函数说明
@@ -2988,12 +3086,103 @@ lateral view explode(category) table_temp as category_name;
 > - DENSE_RANK() 排序相同时会重复,总数会减少
 > - ROW_NUMBER() 会根据顺序计算
 
+> 案例
+> - 准备数据,score.txt
+> - 计算每门学科成绩排名
+
+```hiveql
+create table score(
+name string,
+subject string, 
+score int) 
+row format delimited fields terminated by "\t";
+load data local inpath '/opt/module/datas/score.txt' into table score;
+
+```
+
+```shell script
+hive (default)> select name,subject,score,
+              > rank() over(partition by subject order by score desc) rp,
+              > dense_rank() over(partition by subject order by score desc) drp,
+              > row_number() over(partition by subject order by score desc) rmp
+              > from score; 
+name    subject score   rp      drp     rmp
+孙悟空  数学    95      1       1       1
+宋宋    数学    86      2       2       2
+婷婷    数学    85      3       3       3
+大海    数学    56      4       4       4
+宋宋    英语    84      1       1       1
+大海    英语    84      1       1       2
+婷婷    英语    78      3       2       3
+孙悟空  英语    68      4       3       4
+大海    语文    94      1       1       1
+孙悟空  语文    87      2       2       2
+婷婷    语文    65      3       3       3
+宋宋    语文    64      4       4       4
+hive (default)> 
+```
 
 
+## 第七章 函数
+### 7.1 系统内置函数
+
+> - 查看系统自带的函数
+> - 显示自带的函数的用法
+> - 详细显示自带的函数的用法
+
+```hiveql
+show functions;
+desc function upper; -- 查看upper函数用法
+desc function extended upper; --查看upper函数详细用法
+```
+
+### 7.2 自定义函数
+
+> 自定义函数
+> - Hive自带了一些函数,比如:max/min等,但是数量有限,自己可以通过自定义UDF来方便的扩展
+> - 当Hive提供的内置函数无法满足你的业务处理需要时,此时就可以考虑使用用户自定义函数(UDF:user-defined function)
+> - 根据用户自定义函数类别分为以下三种
+>   - UDF(User-Defined-Function),一进一出
+>   - UDAF(User-Defined Aggregation Function),聚集函数，多进一出,类似count/mix/max
+>   - UDTF(User-Defined Table-Generating Functions),一进多出,例如:lateral view explore()
+
+> 官方文档地址
+> - https://cwiki.apache.org/confluence/display/Hive/HivePlugins
+
+> 编程步骤
+> - 继承org.apache.hadoop.hive.ql.UDF
+> - 需要实现evaluate函数;evaluate函数支持重载
+> - 在hive的命令行窗口创建函数
+>   - 添加jar:add jar linux_jar_path
+>   - 创建function:create [temporary] function [dbname.]function_name AS class_name;
+> - 在hive的命令行窗口删除函数
+>   - Drop [temporary] function [if exists] [dbname.]function_name;
+
+> 注意事项
+> -UDF必须要有返回类型,可以返回null,但是返回类型不能为void;
+
+### 7.3 自定义UDF函数
+
+> 自定义UDF函数
+> - 创建一个Maven工程Hive
+> - 导入依赖
+> - 创建一个类
+> - 打成jar包上传到服务器,/opt/module/jars/udf.jar
+> - 将jar包添加到hive的classpath
+> - 创建临时函数与开发好的java class关联
+> - 即可在hql中使用自定义的函数strip
 
 
-
-
+```xml
+<!-- 导入hive依赖,https://mvnrepository.com/artifact/org.apache.hive/hive-exec -->
+<dependencies>
+	<dependency>
+		<groupId>org.apache.hive</groupId>
+		<artifactId>hive-exec</artifactId>
+		<version>1.2.1</version>
+	</dependency>
+</dependencies>
+```
 
 
 

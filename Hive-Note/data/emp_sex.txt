@@ -1,4 +1,3 @@
-name	dept_id	sex
 悟空	A	男
 大海	A	男
 宋宋	B	男
