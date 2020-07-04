@@ -3122,6 +3122,110 @@ name    subject score   rp      drp     rmp
 hive (default)> 
 ```
 
+## Hive练习
+
+### 习题一
+
+> 原始数据(action.txt)
+```text
+userId	visitDate	visitCount
+u01	2017/1/21	5
+u02	2017/1/23	6
+u03	2017/1/22	8
+u04	2017/1/20	3
+u01	2017/1/23	6
+u01	2017/2/21	8
+u02	2017/1/23	6
+u01	2017/2/22	4
+```
+
+> 使用SQL统计出每个用户的累积访问次数
+
+```text
+用户id	月份	小计	累积
+u01	2017-01	11	11
+u01	2017-02	12	23
+u02	2017-01	12	12
+u03	2017-01	8	8
+u04	2017-01	3	3
+```
+
+> SQL
+
+```hiveql
+create table action(
+userId string,
+visitDate string,
+visitCount int
+) row format delimited fields terminated by "\t";
+
+load data local inpath '/opt/module/datas/action.txt' into table action;
+
+select userId,ym,tn,sum(tn) over(partition by userId order by tn) dn
+from (
+select 
+userId,date_format(regexp_replace(visitDate,'/','-'),'yyyy-MM') ym,sum(visitCount) tn 
+from action group by userId,date_format(regexp_replace(visitDate,'/','-'),'yyyy-MM')
+)t;
+
+```
+
+### 习题二
+
+> 原始数据(visit.txt)
+> - 每个顾客访问任何一个店铺的任何一个商品时都会产生一条访问日志,访问日志存储的表名为visit,访客的用户id为user_id,被访问的店铺名称为shop
+```text
+user_id shop
+u1	a
+u2	b
+u1	b
+u1	a
+u3	c
+u4	b
+u1	a
+u2	c
+u5	b
+u4	b
+u6	c
+u2	c
+u1	b
+u2	a
+u2	a
+u3	a
+u5	a
+u5	a
+u5	a
+```
+
+> 使用SQL完成统计
+> - 每个店铺的UV(访客数)
+> - 每个店铺访问次数top3的访客信息,输出店铺名称,访客id,访问次数
+
+```hiveql
+create table visit(
+user_id string,
+shop string
+) row format delimited fields terminated by '\t';
+
+load data local inpath '/opt/module/datas/visit.txt' into table visit;
+
+-- 每个店铺UV
+select shop,count(*) from visit group by shop;
+select shop,user_id,count(*) ct from visit group by shop,user_id;
+
+-- 每个店铺访问次数top3的访客信息
+
+select t1.shop,t1.user_id,t1.ct
+from
+(
+    select 
+    shop,user_id,ct,row_number() over(partition by shop order by ct desc) rn
+    from 
+    (select shop,user_id,count(*) ct from visit group by shop,user_id) t 
+) t1 
+where t1.rn <4; 
+```
+
 
 ## 第七章 函数
 ### 7.1 系统内置函数
