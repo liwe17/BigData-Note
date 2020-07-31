@@ -3262,7 +3262,7 @@ desc function extended upper; --查看upper函数详细用法
 > - 在hive的命令行窗口删除函数
 >   - Drop [temporary] function [if exists] [dbname.]function_name;
 
-> 注意事项
+> 注意事项   
 > -UDF必须要有返回类型,可以返回null,但是返回类型不能为void;
 
 ### 7.3 自定义UDF函数
@@ -3288,6 +3288,336 @@ desc function extended upper; --查看upper函数详细用法
 </dependencies>
 ```
 
+## 第八章 压缩和存储
+
+### 8.2 Hadoop压缩配置
+
+#### 8.2.1 MR支持的压缩编码
+
+<table>
+    <tr>
+        <th>压缩格式</th>
+        <th>hadoop自带</th>
+        <th>算法</th>
+        <th>文件扩展名</th>
+        <th>是否可以切分</th>
+        <th>换成压缩格式后,原来的程序是否需要修改</th>
+    </tr>
+    <tr>
+        <th>DEFLATE</th>
+        <th>是,直接使用</th>
+        <th>DEFLATE</th>
+        <th>.deflate</th>
+        <th>否</th>
+        <th>和文本处理一样,不需要修改</th>
+    </tr>
+    <tr>
+        <th>Gzip</th>
+        <th>是,直接使用</th>
+        <th>DEFLATE</th>
+        <th>.gz</th>
+        <th>否</th>
+        <th>和文本处理一样,不需要修改</th>
+    </tr>
+    <tr>
+        <th>bzip2</th>
+        <th>是,直接使用</th>
+        <th>bzip2</th>
+        <th>.bz2</th>
+        <th>是</th>
+        <th>和文本处理一样,不需要修改</th>
+    </tr>
+    <tr>
+        <th>LZO</th>
+        <th>否,需要安装</th>
+        <th>LZO</th>
+        <th>.lzo</th>
+        <th>是</th>
+        <th>需要创建索引,还需要指定输入格式</th>
+    </tr>
+    <tr>
+        <th>Snappy</th>
+        <th>否,需要安装</th>
+        <th>Snappy</th>
+        <th>.snappy</th>
+        <th>否</th>
+        <th>和文本处理一样,不需要修改</th>
+    </tr>
+</table>
+
+> 为了支持多种压缩/解压缩算法,Hadoop引入了编码/解码器,如下表示.
+
+<table>
+    <tr>
+        <th>压缩格式</th>
+        <th>对应的编码/解码器</th>
+    </tr>
+    <tr>
+        <th>DEFLATE</th>
+        <th>org.apache.hadoop.io.compress.DefaultCodec</th>
+    </tr>
+    <tr>
+        <th>gzip</th>
+        <th>org.apache.hadoop.io.compress.GzipCodec</th>
+    </tr>
+    <tr>
+        <th>bzip2</th>
+        <th>org.apache.hadoop.io.compress.BZip2Codec</th>
+    </tr>
+    <tr>
+        <th>LZO</th>
+        <th>org.hadoop.compression.lzo.LzopCodec</th>
+    </tr>
+    <tr>
+        <th>Snappy</th>
+        <th>org.apache.hadoop.io.compress.SnappyCodec</th>
+    </tr>
+</table>
+
+> 压缩性能的比较
+
+<table>
+    <tr>
+        <th>压缩算法</th>
+        <th>原始文件大小</th>
+        <th>压缩文件大小</th>
+        <th>压缩速度</th>
+        <th>解压速度</th>
+    </tr>
+    <tr>
+        <th>gzip</th>
+        <th>8.3G</th>
+        <th>1.8G</th>
+        <th>17.5MB/s</th>
+        <th>58MB/s</th>
+    </tr>
+    <tr>
+        <th>bzip2</th>
+        <th>8.3G</th>
+        <th>1.1G</th>
+        <th>2.4MB/s</th>
+        <th>9.5MB/s</th>
+    </tr>
+    <tr>
+        <th>LZO</th>
+        <th>8.3G</th>
+        <th>2.9G</th>
+        <th>49.3MB/s</th>
+        <th>74.6MB/s</th>
+    </tr>
+</table>
+
+> http://google.github.io/snappy/
+> - on a single core of a core i7 processor in 64-bit mode,Snappy compresses at about 250M/sec or more and decompresses at about 500MB/sec or more.
+
+#### 8.2.2 压缩参数配置
+
+> 要在Hadoop中启用压缩,可以配置如下参数(mapred-site.xml文件中)
+
+<table>
+    <tr>
+        <th>参数</th>
+        <th>默认值</th>
+        <th>阶段</th>
+        <th>建议</th>
+    </tr>
+    <tr>
+        <th>io.compression.codecs<br>在core-site.xml中配置</th>
+        <th>org.apache.hadoop.io.compress.DefaultCodec<br>org.apache.hadoop.io.compress.GzipCodec<br>org.apache.hadoop.io.compress.BZip2Codec</th>
+        <th>输入压缩</th>
+        <th>Hadoop使用文件扩展名判断是否支持某种编码解码器</th>
+    </tr>
+    <tr>
+        <th>mapreduce.map.output.compress<br>在mapred-site.xml配置</th>
+        <th>false</th>
+        <th>mapper输出</th>
+        <th>这个参数设为true启用压缩</th>
+    </tr>
+    <tr>
+        <th>mapreduce.map.output.compress.codec<br>在mapred-site.xml配置</th>
+        <th>org.apache.hadoop.io.compress.DefaultCodec</th>
+        <th>mapper输出</th>
+        <th>企业多使用LZO或Snappy编解码器在此阶段压缩数据</th>
+    </tr>
+    <tr>
+        <th>mapreduce.output.fileoutputformat.compress<br>在mapred-site.xml配置</th>
+        <th>false</th>
+        <th>reducer输出</th>
+        <th>这个参数设为true启用压缩</th>
+    </tr>
+    <tr>
+        <th>mapreduce.output.fileoutputformat.compress.codec<br>在mapred-site.xml配置</th>
+        <th>org.apache.hadoop.io.compress.DefaultCodec</th>
+        <th>reducer输出</th>
+        <th>使用标准工具或者编解码器,如gzip和bzip2</th>
+    </tr>
+    <tr>
+        <th>mapreduce.output.fileoutputformat.compress.type<br>在mapred-site.xml配置</th>
+        <th>RECORD</th>
+        <th>reducer输出</th>
+        <th>SequenceFile输出使用的压缩类型:NONE和BLOCK</th>
+    </tr>
+</table>
+
+#### 8.3 开启Map输出阶段压缩
+
+> 开启map输出阶段压缩可以减少job中map和Reduce task间数据传输量
+
+> 案例实操
+> - 开启hive中间传输数据压缩功能
+> - 开启mapreduce中map输出压缩功能
+> - 设置mapreduce中map输出数据的压缩方式
+> - 执行查询语句
+
+```hiveql
+set hive.exec.compress.intermediate=true;
+set mapreduce.map.output.compress=true;
+set mapreduce.map.output.compress.codec=org.apache.hadoop.io.compress.SnappyCodec;
+
+select count(ename) name from emp;
+```
+
+#### 8.4 开启Reduce输出阶段压缩
+
+> 当Hive将输出写入到表中时,输出内容同样可以进行压缩</br>
+> - 属性hive.exec.compress.output控制着这个功能.用户可能需要保持默认设置文件中的默认值false,这样默认的输出就是非压缩的纯文本文件了
+> - 用户可以通过在查询语句或执行脚本中设置这个值为true，来开启输出结果压缩功能
+
+> 案例实操
+> - 开启hive最终输出数据压缩功能
+> - 开启mapreduce最终输出数据压缩
+> - 设置mapreduce最终数据输出压缩方式
+> - 设置mapreduce最终数据输出压缩为块压缩
+> - 测试一下输出结果是否是压缩文件
+
+```hiveql
+set hive.exec.compress.output=true;
+set mapreduce.output.fileoutputformat.compress=true;
+set mapreduce.output.fileoutputformat.compress.codec=org.apache.hadoop.io.compress.SnappyCodec;
+set mapreduce.output.fileoutputformat.compress.type=BLOCK;
+insert overwrite local directory '/opt/module/datas/distribute-result' select * from emp distribute by deptno sort by empno desc;
+```
+
+#### 8.5 文件存储格式
+
+> Hive支持的存储数的格式主要有:TEXTFILE,SEQUENCEFILE,ORC,PARQUET
+> - TEXTFILE和SEQUENCEFILE的存储格式都是基于行存储的；
+> - ORC和PARQUET是基于列式存储的
 
 
+##### 8.5.1 列式存储和行式存储
+
+> 行存储的特点
+> - 查询满足条件的一整行数据的时候,列存储则需要去每个聚集的字段找到对应的每个列的值,行存储只需要找到其中一个值,其余的值都在相邻地方,所以此时行存储查询的速度更快
+
+> 列存储的特点
+> - 因为每个字段的数据聚集存储,在查询只需要少数几个字段的时候.能大大减少读取的数据量;每个字段的数据类型一定是相同的,列式存储可以针对性的设计更好的设计压缩算法
+
+### 第9章 企业级调优
+#### 9.1 Fetch抓取
+
+> Fetch抓取是指Hive中对某些情况的查询可以不必使用MapReduce计算,例如:ELECT * FROM employees;在这种情况下,Hive可以简单地读取employee对应的存储目录下的文件,然后输出查询结果到控制台.
+> - 在hive-default.xml.template文件中hive.fetch.task.conversion默认是more,老版本hive默认是minimal,属性修改为more以后,在全局查找,字段查找,limit查找等都不走mapreduce
+
+```xml
+<property>
+    <name>hive.fetch.task.conversion</name>
+    <value>more</value>
+    <description>
+      Expects one of [none, minimal, more].
+      Some select queries can be converted to single FETCH task minimizing latency.
+      Currently the query should be single sourced not having any subquery and should not have
+      any aggregations or distincts (which incurs RS), lateral views and joins.
+      0. none : disable hive.fetch.task.conversion
+      1. minimal : SELECT STAR, FILTER on partition columns, LIMIT only
+      2. more  : SELECT, FILTER, LIMIT only (support TABLESAMPLE and virtual columns)
+    </description>
+  </property>
+```
+
+> 案例实操
+> - 把hive.fetch.task.conversion设置成none,然后执行查询语句,都会执行mapreduce程序
+> - 把hive.fetch.task.conversion设置成more,然后执行查询语句,如下查询方式都不会执行mapreduce程序
+
+```hiveql
+set hive.fetch.task.conversion=more;
+select * from emp;
+select ename from emp;
+select ename from emp limit 3;
+```
+
+#### 9.2 本地模式
+
+> 大多数的Hadoop Job是需要Hadoop提供的完整的可扩展性来处理大数据集的,有时Hive的输入数据量是非常小的.在这种情况下,为查询触发执行任务消耗的时间可能会比实际job的执行时间要多的多.对于大多数这种情况,Hive可以通过本地模式在单台机器上处理所有的任务.对于小数据集,执行时间可以明显被缩短.
+> - 用户可以通过设置hive.exec.mode.local.auto的值为true,来让Hive在适当的时候自动启动这个优化
+
+```text
+set hive.exec.mode.local.auto=true;  //开启本地mr
+//设置local mr的最大输入数据量，当输入数据量小于这个值时采用local  mr的方式，默认为134217728，即128M
+set hive.exec.mode.local.auto.inputbytes.max=50000000;
+//设置local mr的最大输入文件个数，当输入文件个数小于这个值时采用local mr的方式，默认为4
+set hive.exec.mode.local.auto.input.files.max=10;
+```
+
+> 案例实操
+> - 开启本地模式,并执行查询语句
+> - 关闭本地模式,并执行查询语句
+
+```hiveql
+set hive.exec.mode.local.auto=true;
+select * from emp cluster by deptno;
+
+set hive.exec.mode.local.auto=false; 
+select * from emp cluster by deptno;
+
+```
+
+#### 9.3 表的优化
+##### 9.3.1 小表和大表Join
+> 将key相对分散,并且数据量小的表放在join的左边,这样可以有效减少内存溢出错误发生的几率;再进一步,可以使用map join让小的维度表(1000条以下的记录条数)先进内存.在map端完成reduce
+
+> 实际测试发现,新版的hive已经对小表JOIN大表和大表JOIN小表进行了优化.小表放在左边和右边已经没有明显区别
+
+##### 9.3.2 大表Join大表
+
+> 空KEY过滤
+> - 有时join超时是因为某些key对应的数据太多,而相同key对应的数据都会发送到相同的reducer上,从而导致内存不够.此时我们应该仔细分析这些异常的key,很多情况下,这些key对应的数据是异常数据,我们需要在SQL语句中进行过滤.例如key对应的字段为空
+
+> 空key转换
+> - 有时虽然某个key为空对应的数据很多,但是相应的数据不是异常数据,必须要包含在join的结果中，此时我们可以表a中key为空的字段赋一个随机的值,使得数据随机均匀地分不到不同的reducer上
+
+```hiveql
+select n.* from nullidtable n full join ori o on case when n.id is null then concat('hive', rand()) else n.id end = o.id;
+```
+
+##### 9.3.3 MapJoin
+
+> 如果不指定MapJoin或者不符合MapJoin的条件,那么Hive解析器会将Join操作转换成Common Join,即:在Reduce阶段完成join.容易发生数据倾斜.可以用MapJoin把小表全部加载到内存在map端进行join,避免reducer处理
+> - 开启MapJoin参数设置
+>   - 设置自动选择MapJoin:set hive.auto.convert.join = true; 默认为true
+>   - 表小表的阈值设置(默认25M一下认为是小表),set hive.mapjoin.smalltable.filesize=25000000;
+
+##### 9.3.4 Group By
+
+> 默认情况下,Map阶段同一Key数据分发给一个reduce,当一个key数据过大时就倾斜了
+
+> 并不是所有的聚合操作都需要在Reduce端完成,很多聚合操作都可以先在Map端进行部分聚合,最后在Reduce端得出最终结果
+
+> 开启Map端聚合参数设置
+> - 是否在Map端进行聚合,默认为true:hive.map.aggr = true
+> - 在Map端进行聚合操作的条目数目:hive.groupby.mapaggr.checkinterval = 100000
+> - 有数据倾斜的时候进行负载均衡,默认是false:hive.groupby.skewindata = true
+
+##### 9.3.5 Count(Distinct) 去重统计
+
+> 数据量小的时候无所谓,数据量大的情况下,由于COUNT DISTINCT操作需要用一个Reduce Task来完成,这一个Reduce需要处理的数据量太大,就会导致整个Job很难完成,一般COUNT DISTINCT使用先GROUP BY再COUNT的方式替换
+
+#### 9.3.6 笛卡尔积
+
+> 尽量避免笛卡尔积,join的时候不加on条件,或者无效的on条件,Hive只能使用1个reducer来完成笛卡尔积
+
+##### 9.3.7 行列过滤
+
+> 列处理:在SELECT中,只拿需要的列,如果有,尽量使用分区过滤,少用SELECT *
+> 行处理:在分区剪裁中,当使用外关联时,如果将副表的过滤条件写在Where后面,那么就会先全表关联,之后再过滤
 
