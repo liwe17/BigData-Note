@@ -17,6 +17,8 @@
         <module>Zookeeper-Note</module>
         <module>Zookeeper-Demo</module>
         <module>Hive-Note</module>
+        <module>Scala-Note</module>
+        <module>Scala-Demo</module>
     </modules>
 
     <!-- 指定JDK1.8编码 -->

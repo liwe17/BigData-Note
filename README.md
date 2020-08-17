@@ -28,7 +28,14 @@
 
 > Zookeeper-Demo
 
-### 四. Hive基础
+## 四. Hive基础
 
 > Hive-Note
 > - Hive-Note.md    Hive-Note学习笔记
+
+## 五. Scala基础
+> Scala-Note
+> - Scala-Note.md   Scala-Note学习笔记
+
+### 5.1 Scala学习Demo
+> Scala-Demo  
