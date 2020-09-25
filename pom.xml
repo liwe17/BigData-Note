@@ -19,6 +19,7 @@
         <module>Hive-Note</module>
         <module>Scala-Note</module>
         <module>Scala-Demo</module>
+        <module>Kafka-Node</module>
     </modules>
 
     <!-- 指定JDK1.8编码 -->

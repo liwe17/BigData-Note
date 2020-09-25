@@ -33,9 +33,15 @@
 > Hive-Note
 > - Hive-Note.md    Hive-Note学习笔记
 
-## 五. Scala基础
+## 五. Kafka基础
+
+> Kafka-Note
+> - Kafka-Note.md   Kafka-Note学习笔记
+
+## 六. Scala基础
+
 > Scala-Note
 > - Scala-Note.md   Scala-Note学习笔记
 
-### 5.1 Scala学习Demo
-> Scala-Demo  
+### 6.1 Scala学习Demo
+> Scala-Demo    
