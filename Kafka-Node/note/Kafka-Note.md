@@ -231,9 +231,9 @@ bin/kafka-topics.sh --zookeeper localhost:2181 --alter --topic first --partition
     </tr> 
 </table>
 
-> kafka选择了第二种方案,原因如下:
-> - 同样为了容忍n台节点的故障,第一种方案需要2n+1个副本,而第二种方案只需要n+1个副本,而Kafka的每个分区都有大量的数据,第一种方案会造成大量数据的冗余.
-> - 虽然第二种方案的网络延迟会比较高,但网络延迟对 Kafka 的影响较小
+kafka选择了第二种方案,原因如下:
+- 同样为了容忍n台节点的故障,第一种方案需要2n+1个副本,而第二种方案只需要n+1个副本,而Kafka的每个分区都有大量的数据,第一种方案会造成大量数据的冗余.
+- 虽然第二种方案的网络延迟会比较高,但网络延迟对 Kafka 的影响较小
 
 2. ISR
 
@@ -244,9 +244,7 @@ bin/kafka-topics.sh --zookeeper localhost:2181 --alter --topic first --partition
 
 3. ACK应答机制
 
-对于某些不太重要的数据,对数据的可靠性要求不是很高,能够容忍数据的少量丢失,所以没必要等ISR中的follower全部接收成功.
-
-Kafka提供了三种可靠性级别,用户根据对可靠性和延迟的要求进行权衡,acks参数配置
+对于某些不太重要的数据,对数据的可靠性要求不是很高,能够容忍数据的少量丢失,所以没必要等ISR中的follower全部接收成功,Kafka提供了三种可靠性级别,用户根据对可靠性和延迟的要求进行权衡,acks参数配置
 - 0: producer不等待broker的ack,这一操作提供了一个最低的延迟,broker接收到还没有写入磁盘就已经返回,当broker故障时有可能丢失数据.
 - 1: producer等待broker的ack,partition的leader落盘成功后返回ack,如果在follower同步成功之前leader故障,那么将会丢失数据.
 - all(-1):producer等待broker的ack,partition的全部leader落盘成功后返回ack,如果在follower同步成功之后,broker发送ack之前,leader故障,那么会造成数据重复.
