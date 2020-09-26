@@ -252,3 +252,53 @@ kafka选择了第二种方案,原因如下:
 ![数据重复案例](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q13noOkMMMLZfhtTRBCs8qPpvOMLC3tM26HTNf3Tmln7EL0KX3Aia3H2CwJKHQ0f3ibngXFTM3oJa2A/0?wx_fmt=png)
 
 4. 故障处理
+
+![日志文件中HW和LEO](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q13noOkMMMLZfhtTRBCs8qPgp78d54ftsS4XcRTLicW8QfjyS0RFQVo7icHZ7iblwE8WygwhqChYr0Zw/0?wx_fmt=png)
+
+- LEO:指的是每个副本的最大offset.
+- HW:指的是消费者能见到的最大offset,ISR中最小的LEO.
+
+1. follower故障
+- follower发生故障后会被临时踢出ISR,待该follower恢复后,会读取本地磁盘记录的上次的HW,并将log文件高于HW的部分截取掉,从HW开始向leader进行同步.
+- 等到follower的LEO大于等于该Partition的HW,即follower追上leader后,就可以重新加入ISR.
+2. leader故障
+- leader发生故障之后,就会从ISR中选出一个新的leader,为保证多个副本之间数据一致性,其余的follower都会先将各自的log文件高于HW的部分截掉,然后从leader中同步数据.
+- 这只能保证副本之间的数据一致性,并不能保证数据不丢失或者不重复.
+
+#### 3.2.3 Exactly Once语义
+
+- 将服务器的ACK级别设置为-1,可以保证Producer到Server之间不会丢失数据,即At Least Once语义,相对的,将服务器ACK级别设置为0,可以保证生产者每条消息只会被发送一次,即At Most Once语义.
+- At Least Once可以保证数据不丢失,但是不能保证数据不重复;相对的,At Least Once可以保证数据不重复,但是不能保证数据不丢失.
+- 对于一些非常重要的信息,比如说交易数据,下游数据消费者要求数据既不重复也不丢失,即Exactly Once语义,在0.11版本以前的Kafka,对此是无能为力的,只能保证数据不丢失,再在下游消费者对数据做全局去重.
+- 0.11版本的Kafka,引入了一项重大特性:幂等性,所谓的幂等性就是指Producer不论向Server发送多少次重复数据,Server端都只会持久化一条.幂等性结合At Least Once语义,就构成了Kafka的Exactly Once语义.
+    - At Least Once + 幂等性 = Exactly Once
+    - 启用幂等性,需要将Producer的参数中enable.idompotence设置为true.
+    - Kafka的幂等性实现其实就是将原来下游需要做的去重放在了数据上游.
+    - 开启幂等性的Producer在初始化的时候会被分配一个PID,发往同一Partition的消息会附带Sequence Number,Broker 端会对<PID,Partition,SeqNumber>做缓存,当具有相同主键的消息提交时,Broker只会持久化一条.
+    - PID重启就会变化,同时不同的Partition也具有不同主键,所以幂等性无法保证跨分区跨会话的Exactly Once.
+
+### 3.3 Kafka消费者
+#### 3.3.1 消费方式
+
+- consumer 采用pull(拉)模式从broker中读取数据.
+    - 可以根据consumer的消费能力以适当的速率消费消息.
+    - 如果kafka没有数据,消费者可能会陷入循环中,一直返回空数据,因此Kafka的消费者在消费数据时会传入一个时长参数timeout,如果当前没有数据可供消费,consumer会等待一段时间之后再返回,这段时长即为timeout.
+- push(推)模式很难适应消费速率不同的消费者.
+    - 消息发送速率是由broker决定的,它的目标是尽可能以最快速度传递消息,因此这样很容易造成consumer来不及处理消息,典型的表现就是拒绝服务以及网络拥塞.
+
+#### 3.3.2 分区
+
+一个consumer group中有多个consumer,一个topic有多个partition,所以必然会涉及到partition的分配问题,即确定那个partition由哪个consumer来消费.
+
+Kafka有两种分配策略,一是RoundRobin,一是Range.
+
+#### 3.3.3 offset的维护
+
+由于consumer在消费过程中可能会出现断电宕机等故障,consumer恢复后,需要从故障前的位置的继续消费,所以consumer需要实时记录自己消费到了哪个offset,以便故障恢复后继续消费.
+
+Kafka0.9版本之前,consumer默认将offset保存在Zookeeper中,从0.9版本开始,consumer默认将offset保存在Kafka一个内置的topic中,该topic为__consumer_offsets.
+
+![offset维护](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q13noOkMMMLZfhtTRBCs8qPV0BoQkMXt2S4ChS2apheSeLsXM6U98BRj6AhMuRyg3Qpxs5hTAOiadw/0?wx_fmt=png)
+
+
+
