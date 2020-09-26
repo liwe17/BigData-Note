@@ -25,13 +25,13 @@ Kafka是一个分布式的基于发布/订阅模式的消息队列(Message Queue
 
 1. 点对点模式(一对一,消费者主动拉取数据,消息收到后清除)
 
-> 消息生产者生产消息发送到Queue中,然后消息消费者从Queue中取出并且消费消息.消息被消费以后,queue中不再有存储,所以消息消费者不可能消费到已经消费的消息.Queue支持存在多个消费者,但是对一个消息而言,只会有一个消费者可以消费.
+消息生产者生产消息发送到Queue中,然后消息消费者从Queue中取出并且消费消息.消息被消费以后,queue中不再有存储,所以消息消费者不可能消费到已经消费的消息.Queue支持存在多个消费者,但是对一个消息而言,只会有一个消费者可以消费.
 
 ![点对点模式](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q0S0qZ7iadbHfvHT75LibAegicbjjkk1RmGfbuFpZJsuzSjE7nHf9muXqFty7j0d0ljzEDqBPW82ODsQ/0?wx_fmt=png)
 
 2. 发布/订阅模式(一对多,消费者消费数据之后不会清除消息)
 
-> 消息生产者(发布)将消息发布到topic中,同时有多个消息消费者(订阅)消费该消息.和点对点不同,发布到topic的消费会被所有订阅者消费.
+消息生产者(发布)将消息发布到topic中,同时有多个消息消费者(订阅)消费该消息.和点对点不同,发布到topic的消费会被所有订阅者消费.
 
 ![发布/订阅模式](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q0S0qZ7iadbHfvHT75LibAegicpkvqbrPVCqIk4XOMW7a1eiaKmotmlRs6MfEyyFVRjba8ibiaLiabAu4H2Q/0?wx_fmt=png) 
 
@@ -69,7 +69,7 @@ tar -zxvf kafka_2.11-0.11.0.0.tgz -C /opt/module
 
 cd /opt/module && mv kafka_2.11-0.11.0.0/ kafka
 
-mdkir logs
+cd /opt/module/kafka && mkdir logs
 
 cd /opt/module/kafka/config && vi server.properties
 
@@ -107,6 +107,11 @@ num.recovery.threads.per.data.dir=1
 log.retention.hours=168
 #配置连接 Zookeeper 地址,多个地址逗号分割
 zookeeper.connect=localhost:2181
+
+# 解决报错:Error while fetching metadata with correlation id
+# 解决报错:Connection to node -1 could not be established
+listeners=PLAINTEXT://localhost:9092
+advertised.listeners=PLAINTEXT://localhost:9092
 ```
 
 ```shell script
@@ -138,11 +143,13 @@ export PATH=$PATH:$KAFKA_HOME/bin
 cd /opt/module/kafka/ 
 bin/kafka-topics.sh --zookeeper localhost:2181 --list
 
-bin/kafka-topics.sh --zookeeper localhost:2181 --create --replication-factor 3 --partitions 1 --topic first
+bin/kafka-topics.sh --zookeeper localhost:2181 --create --replication-factor 1 --partitions 3 --topic first
 
 bin/kakka-topics.sh --zookeeper localhost:2181 --delete --topic first
 
 bin/kafka-console-producer.sh --broker-list localhost:9092 --topic first
+>hello world
+>test li test li
 
 bin/kafka-console-consumer.sh --zookeeper localhost:2181 --topic first
 bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic first
@@ -164,7 +171,7 @@ bin/kafka-topics.sh --zookeeper localhost:2181 --alter --topic first --partition
 
 ![Kafka文件存储机制](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q0S0qZ7iadbHfvHT75LibAegic8ufqjtxdjNHYnUdsWakbwmvLCF9j0Mbic1gQjkk6Vic7bUbkDcNLfvRw/0?wx_fmt=png)
 
-> 由于生产者生产的消息会不断追加到log文件末尾,为防止log文件过大导致数据定位效率低下,Kafka采取了分片和索引机制.
+由于生产者生产的消息会不断追加到log文件末尾,为防止log文件过大导致数据定位效率低下,Kafka采取了分片和索引机制.
 - 每个partition分为多个segment,每个segment对应两个文件-'.index'文件和'.log'文件
 - index和log文件位于一个文件夹下,该文件夹的命名规则为:topic+分区序号
   - 例如first有三个分区,则其对应的文件夹为first0,first1,first3
@@ -190,13 +197,60 @@ bin/kafka-topics.sh --zookeeper localhost:2181 --alter --topic first --partition
 - 可以提高并发,因为可以以partition为单位读写.
 
 2. 分区的原则
+
 ![ProducerRecord对象](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q0S0qZ7iadbHfvHT75LibAegicjH86ibhnGjjPtBIK0m2ujqqh0WnMDSXBzjq7SmTJib84V6FONpe1mEXQ/0?wx_fmt=png)
-> 我们需要将producer发送的数据封装成一个ProducerRecord对象.
+
+我们需要将producer发送的数据封装成一个ProducerRecord对象.
 - 指明partition的情况下,直接将指明的值作为partition值.
 - 没有指明partition值但有key的情况下,将key的hash值与topic的partition数进行取余得到partition值.
 - 既没有partition值又没有key值的情况下,第一次调用时随机生成一个整数(后面每次调用在这个整数上自增),将这个值与topic可用的partition总数取余得到partition值,也就是常说round-robin算法.
 
 #### 3.2.2 数据可靠性保证
- 
 
+为了保证producer发送的数据,能可靠的发送到指定topic,topic的每个partition收到producer发送的数据后,都需要向producer发送ack(acknowledgement 确认收到),如果producer收到ack,就会进行下一轮发送,否则会重新发送.
 
+![数据可靠性](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q13noOkMMMLZfhtTRBCs8qPlUxWP8DtqQgcerRdtbeicDociaDoQT6lSl6JSUsQKCpkuOrX2WMqP2yw/0?wx_fmt=png)
+
+1. 副本数据同步策略
+
+<table>
+    <tr>
+        <td>方案</td>
+        <td>优点</td>
+        <td>缺点</td>
+    </tr>
+    <tr>
+        <td>半数以上完成同步,发送ack</td>
+        <td>延迟低</td>
+        <td>选举新的leader时,容忍n台节点故障,需要2n+1个副本</td>
+    </tr>
+    <tr>
+        <td>全部同步完成,发送ack</td>
+        <td>选举新的leader时,容忍n台节点故障,需要n+1个副本</td>
+        <td>延迟高</td>
+    </tr> 
+</table>
+
+> kafka选择了第二种方案,原因如下:
+> - 同样为了容忍n台节点的故障,第一种方案需要2n+1个副本,而第二种方案只需要n+1个副本,而Kafka的每个分区都有大量的数据,第一种方案会造成大量数据的冗余.
+> - 虽然第二种方案的网络延迟会比较高,但网络延迟对 Kafka 的影响较小
+
+2. ISR
+
+采用第二种方案之后,设想以下情景:leader收到数据,所有follower都开始同步数据,但有一个follower,因为某种故障,迟迟不能与leader进行同步,那leader就要一直等下去,直到它完成同步,才能发送ack,如何解决问题呢?
+- Leader维护了一个动态的 in-sync replica set (ISR),意为和leader保持同步的follower集合.
+- 当 ISR中的follower完成数据的同步之后,leader就会给follower发送ack,如果follower长时间未向follower同步数据,则该follower被提出ISR,该时间阀值由replica.lag.time.max.ms参数设定.
+- Leader发生故障之后,就会从ISR中选举新的leader. 
+
+3. ACK应答机制
+
+对于某些不太重要的数据,对数据的可靠性要求不是很高,能够容忍数据的少量丢失,所以没必要等ISR中的follower全部接收成功.
+
+Kafka提供了三种可靠性级别,用户根据对可靠性和延迟的要求进行权衡,acks参数配置
+- 0: producer不等待broker的ack,这一操作提供了一个最低的延迟,broker接收到还没有写入磁盘就已经返回,当broker故障时有可能丢失数据.
+- 1: producer等待broker的ack,partition的leader落盘成功后返回ack,如果在follower同步成功之前leader故障,那么将会丢失数据.
+- all(-1):producer等待broker的ack,partition的全部leader落盘成功后返回ack,如果在follower同步成功之后,broker发送ack之前,leader故障,那么会造成数据重复.
+
+![数据重复案例](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q13noOkMMMLZfhtTRBCs8qPpvOMLC3tM26HTNf3Tmln7EL0KX3Aia3H2CwJKHQ0f3ibngXFTM3oJa2A/0?wx_fmt=png)
+
+4. 故障处理
