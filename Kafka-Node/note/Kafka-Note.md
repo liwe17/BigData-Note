@@ -300,5 +300,43 @@ Kafka0.9版本之前,consumer默认将offset保存在Zookeeper中,从0.9版本�
 
 ![offset维护](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q13noOkMMMLZfhtTRBCs8qPV0BoQkMXt2S4ChS2apheSeLsXM6U98BRj6AhMuRyg3Qpxs5hTAOiadw/0?wx_fmt=png)
 
+### 3.4 Kafka 高效读写数据
+
+1. 顺序读写磁盘
+- Kafka的producer生产数据,要写入到log文件中,写的过程是一直追加到文件末端,为顺序写.
+- 官网有数据表明,同样的磁盘,顺序写能到600M/s,而随机写只有100K/s,这与磁盘的机械机构有关,顺序写之所以快,是因为其省去了大量磁头寻址的时间.
+
+2. 零复制技术
+
+![零拷贝](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q13noOkMMMLZfhtTRBCs8qPp3GFM4wZHIGQIicEAu8qsg1eeiadtsYBj2y4F1QjmzibZFmBbDuTUpklw/0?wx_fmt=png)
+
+### 3.5 Zookeeper在Kafka的作用
+
+Kafka集群中有一个broker会被选举为Controller.
+- 负责管理集群broker的上下线,所有topic的分区副本分配和leader选举等工作.
+- Controller的管理工作都是依赖于Zookeeper的.
+
+partition的leader选举过程
+
+![选举过程](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q13noOkMMMLZfhtTRBCs8qPPFagtn9HeiaNmPAYuaUwzibOgh4GBITUhNFANS7gpZWn5YpdkOUzWbrA/0?wx_fmt=png) 
+
+### 3.6 Kafka事务
+
+Kafka从0.11版本开始引入了事务支持.事务可以保证Kafka在Exactly Once语义的基础上,生产和消费可以跨分区和会话,要么全部成功,要么全部失败.
+
+#### 3.6.1 Producer事务
+
+为了实现跨分区跨会话的事务,需要引入一个全局唯一的TransactionID,并将Producer获得的PID和TransactionID绑定,这样当Producer重启后就可以通过正在进行的TransactionID获得原来的PID.
+- 为了管理Transaction,Kafka引入了一个新的组件Transaction Coordinator.
+- Producer就是通过和Transaction Coordinator交互获得TransactionID对应的任务状态.
+- Transaction Coordinator还负责将事务所有写入Kafka的一个内部Topic,这样即使整个服务重启,由于事务状态得到保存,进行中的事务状态可以得到恢复,从而继续进行.
+
+#### 3.6.2 Consumer事务
+
+对于Consumer而言,事务的保证就会相对较弱,尤其时无法保证Commit的信息被精确消费.
+- Consumer可以通过offset访问任意信息.
+- 不同的Segment File生命周期不同.
+- 同一事务的消息可能会出现重启后被删除的情况.
+
 
 
