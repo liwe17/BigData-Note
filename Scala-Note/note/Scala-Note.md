@@ -1,4 +1,4 @@
-# 大数据技术之 Scala
+# 大数据技术之 Scala 1
 ## 第一章 Scala语言概述
 ### 1.1 学习Scala原因
 - Scala是Scalable Language的简写,是一门多范式(范式/编程方式[面向对象/函数式编程])的编程语言.
@@ -650,4 +650,206 @@ Scala有39个关键字
 - this, super
 - new
 - true, false, null
+
+## 第三章 运算符
+### 3.1 运算符介绍
+
+运算符是一种特殊的符号,用以表示数据的运算,赋值和比较等.
+- 算术运算符
+- 赋值运算符 
+- 比较运算符(关系运算符)
+- 逻辑运算符
+- 位运算符
+
+### 3.2 算术运算符
+
+算术运算符(arithmetic)是对数值类型的变量进行运算的,在Scala程序中使用的非常多.
+
+![算数运算符列表](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q0edZ7IZ53ic8xWiaHNVlhzbWa9r6icVLsSiau33hYxrwArIlUiaKurRDqnxTibCKZp87SK0zmVIc3Yo2XQ/0?wx_fmt=png)
+
+```scala
+object Demo01 {
+  def main(args: Array[String]): Unit = {
+
+    // /的使用
+    var r1 : Int = 10 / 3 // 3
+    println("r1=" + r1)
+    var r2 : Double = 10 / 3 //3.0
+    println("r2=" + r2)
+    var r3 : Double = 10.0 / 3 //3.333333333
+    println("r3=" + r3 )
+    println("r3=" + r3.formatted("%.2f") ) // 3.33
+
+    //% 的使用
+    // % 的规则: a%b = a-a/b*b
+    println(10 % 3) //1
+    println(-10 % 3) //-1
+    println(-10 % -3) //-1
+    println(10 % -3) //1
+
+    // ++ --
+    // scala 没有 ++ --,使用+= -=
+    var num1 =10
+    num1 += 1
+    num1 -= 1
+    println(num1)
+  }
+}
+```
+
+```scala
+/**
+   *假如还有97天放假，问：xx个星期零xx天
+   * 1.搞清楚需求(读题)
+   * 2.思路分析
+   * (1) 变量保存97
+   * (2) 使用/7 得到几个星期
+   * (3) 使用%7 得到x天
+   * 3.代码实现
+   * 定义一个变量保存华氏温度，华氏温度转换摄氏温度的公式为：5/9*(华氏温度-100),请求出华氏温度对应的摄氏温度。[测试：232.5]
+   */
+  def main(args: Array[String]): Unit = {
+
+    val days = 97
+    printf("统计结果是 %d个星期零%d天",days/7,days%7)
+
+    val hs = 232.5
+    val ss = 5.0/9*(hs-100)
+    println("对应的摄氏温度"+ss.formatted("%.2f"))
+  }
+```
+
+### 3.3 关系运算符(比较运算符)
+
+基本介绍
+- 关系运算符的结果都是boolean型,也就是要么是true,要么是false.
+- 关系表达式经常用在if结构的条件中或循环结构的条件中.
+- 关系运算符的使用和java一样.
+
+![关系运算符列表](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q0edZ7IZ53ic8xWiaHNVlhzbWGRDqv6Mhbia1n5KMdaYgo6icdqEYGc428BibAQUtSw4cAomI2ibrY1iaL7g/0?wx_fmt=png)
+
+细节说明:
+- 关系运算符的结果都是Boolean型,也就是要么是true,要么是false.
+- 关系运算符组成的表达式,我们称为关系表达式.a > b 
+- 比较运算符"=="不能误写成"="
+- 使用陷阱:如果两个浮点数进行比较,应当保证数据类型一致.
+
+### 3.4 逻辑运算符
+
+用于连接多个条件(一般来讲就是关系表达式),最终的结果也是一个Boolean值.
+
+![逻辑运算符列表](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q0edZ7IZ53ic8xWiaHNVlhzbWVERCEluY8pRxJdgxb4jNMclMsoDwx4K25vSnica4W7w4jiaiaXk1wmjTQ/0?wx_fmt=png)
+
+### 3.5 赋值运算符
+
+赋值运算符就是将某个运算后的值,赋给指定的变量.
+
+![赋值运算符列表](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q0edZ7IZ53ic8xWiaHNVlhzbWo9MDD1loI5CNDT29WhAwfdBwh7icPIBLJxdFtms99ibAcD3SvfBbAEhg/0?wx_fmt=png)
+![赋值运算符列表2](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q0edZ7IZ53ic8xWiaHNVlhzbW2el7MN13psAk5B1fwzHGvexrLIgqqtVAczFth8VIwiay1JpXM9l1W8Q/0?wx_fmt=png)
+
+赋值运算符特点
+- 运算顺序从右往左
+- 赋值运算符的左边 只能是变量,右边可以是变量,表达式,常量值/字面量
+- 复合赋值运算符等价于下面的效果,a+=3 等价于a=a+3
+
+### 3.5 运算符优先级
+
+运算符优先级
+- 运算符有不同的优先级,所谓优先级就是表达式运算中的运算顺序.
+- 只有单目运算符,赋值运算符是从右向左运算的.
+- 运算符的优先级和Java一样.
+
+![运算符优先级](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q0Ncribg9X2TswbHDJg2CqmTObmQPK13TSL07a5atzSRFzKJYC0YoVWymGGDaSPrSpbcsuRWBqJnbw/0?wx_fmt=png)
+
+小结运算符的优先级
+- () []
+- 单目运算
+- 算术运算符
+- 移位运算
+- 比较运算符(关系运算符)
+- 位运算
+- 关系运算符
+- 赋值运算
+
+```scala
+object Demo01 {
+
+  def main(args: Array[String]): Unit = {
+    var num =2
+    num <<= 2
+    num >>= 1
+    println(num)
+
+    //在scala中支持代码块,返回值
+    val res = {
+      if(num>1) "hello,ok" else 100
+    }
+    println("res="+res)
+
+    //有两个变量,a和b,要求将其进行交换,但是不允许使用中间变量
+    var a = 10
+    var b =20
+    a=a+b
+    b=a-b
+    a=a-b
+  }
+}
+```
+
+```scala
+object Demo01 {
+  def main(args:Array[String]): Unit = {
+
+    /**
+     * 案例1: 求两个数中的最大数
+     * 案例2: 求三个数中的最大数
+     */
+    val n1 = 4
+    val n2 = 8
+    var res = if(n1>n2) n1 else n2
+    println("res="+res)
+
+    val n3 = 11
+    res = if(res > n3) res else n3
+    println("res="+res)
+
+  }
+
+}
+```
+
+```scala
+object Demo01 {
+
+  def main(args:Array[String]):Unit={
+
+    println("请输入姓名")
+    val name = StdIn.readLine()
+    println("请输入年龄")
+    val age  = StdIn.readInt()
+    println("请输入薪水")
+    val sal =StdIn.readDouble()
+    printf("用户的信息为 name = %s age = %d sal = %.2f",name,age,sal)
+
+
+//    Cat.sayHi
+//    Cat.sayHello
+
+  }
+}
+
+//声明了一个对象(伴生对象)
+object Cat extends AAA{
+  def sayHi:Unit={
+    println("小狗汪汪汪....")
+  }
+}
+
+//AAA是特质,等价于Java中的interface+abstract class
+trait AAA{
+  def sayHello():Unit={
+    println("AAA sayHello")
+  }
+}
+```
 

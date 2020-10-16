@@ -20,7 +20,7 @@ object IdenDemo01 {
 
     //不能使用下划线做标识符
     var _ = "123"
-    println(_)
+    //println(_)
   }
 
 }

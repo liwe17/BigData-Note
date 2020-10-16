@@ -40,3 +40,4 @@ proguard/
 # Others  
 .idea/  
 *.iml 
+/Scala-Demo/target/classes/META-INF/Scala-Demo.kotlin_module
