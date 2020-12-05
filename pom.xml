@@ -20,6 +20,7 @@
         <module>Scala-Note</module>
         <module>Scala-Demo</module>
         <module>Kafka-Node</module>
+        <module>Kafka-Demo</module>
     </modules>
 
     <!-- 指定JDK1.8编码 -->

@@ -338,5 +338,22 @@ Kafka从0.11版本开始引入了事务支持.事务可以保证Kafka在Exactly 
 - 不同的Segment File生命周期不同.
 - 同一事务的消息可能会出现重启后被删除的情况.
 
+## 第四章 Kafka API
+### 4.1 Producer API
+#### 4.1.1 消息发送流程
+
+Kafka的Producer发送消息采用的是异步发送的方式,在消息发送的过程中,涉及到了两个线程-main线程和sender线程,以及一个线程共享变量-RecordAccumulator. main线程将消息发送给RecordAccumulator,sender线程中不断从RecordAccumulator中拉去消息发送到Kafka Broker.
+
+![KafkaProducer发送消息流程](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q1L4icp0cKpL5gTubH722Zgowf9FwB8n46eZHw2CxKkLLQ0U5uvvOiaoX6YgBT6v6diaalKT2gRD4Pmw/0?wx_fmt=png)
+
+相关参数：
+- batch.size:只有数据积累到batch.size之后,sender才会发送数据.
+- linger.ms:如果数据迟迟未达到batch.size,sender等待linger.timer之后就会发送数据.
+
+#### 4.1.2 异步发送API
+
+
+
+
 
 
