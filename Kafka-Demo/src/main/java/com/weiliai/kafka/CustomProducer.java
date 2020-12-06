@@ -1,9 +1,12 @@
 package com.weiliai.kafka;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 
@@ -78,6 +81,18 @@ public class CustomProducer {
         for(int i = 0; i<100; i++){
             producer.send(new ProducerRecord<>("first",Integer.toString(i),Integer.toString(i))).get();
         }
+        producer.close();
+    }
+
+    @Test
+    public void testInterceptors(){
+        List<String> interceptors = Arrays.asList("com.weiliai.kafka.interceptor.CounterInterceptor","com.weiliai.kafka.interceptor.TimeInterceptor");
+        props.put(ProducerConfig.INTERCEPTOR_CLASSES_CONFIG,interceptors);
+        KafkaProducer<String,String> producer = new KafkaProducer<>(props);
+        for(int i = 0; i<10; i++){
+            producer.send(new ProducerRecord<>("first","message"+i));
+        }
+        //关闭producer才会调用拦截器的close方法
         producer.close();
     }
 
