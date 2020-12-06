@@ -460,6 +460,13 @@ Producer拦截器(interceptor)是在Kafka 0.10版本被引入的,主要用于实
     - Kafka-Demo.com.weiliai.kafka.CustomProducer
 
 ## 第五章 Kafka监控
+
+- 给kafka配一个web版的管理页面或仪表盘,管理起来更加方便
+    - 源码:https://github.com/smartloli/kafka-eagle/
+    - 官网:https://www.kafka-eagle.org/
+    - 下载:http://download.kafka-eagle.org/
+    - 安装文档:https://docs.kafka-eagle.org/2.env-and-install
+
 ### 5.1 Kafka Eagle
 
 - 修改kafka启动命令
@@ -535,3 +542,8 @@ export PATH=$PATH:$KE_HOME/bin
 **
 [atguigu@hadoop102 eagle]$
 ```
+- 登录页面查看监控数据
+    - http://192.168.9.102:8048/ke
+    
+![kafka监控web](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q3rG80sBdRDkqS36j1S69oJyKeic3k38yM8icYsYRdWia584x5vZxoZgnA84f2GwIHicAaRQVKibYZ8gibA/0?wx_fmt=png)
+
