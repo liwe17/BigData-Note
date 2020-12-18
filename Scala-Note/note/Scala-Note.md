@@ -88,7 +88,7 @@ Scala需要Java运行时库,安装Scala需要首先安装JVM虚拟机并配置�
 - printf用法(类似C语言)字符串通过%传值.
 - 字符串通过$引用(类似PHP)
 
-```scala
+```
 package com.weiliai.chapter01
 
 object PrintDemo {
@@ -128,7 +128,7 @@ Scala中的注释类型
 - 一个程序就是一个世界,在scala中一切都是对象.
 - 不论是使用哪种高级程序语言编写程序,变量都是其程序的基本组成单位.
 
-```scala
+```text
 def main(args: Array[String]): Unit = {
   var a: Int = 1 //定义一个整型变量,取名a,并赋初值1
   var b: Int = 3 //定义一个整型变量,取名b,并赋初值3
@@ -153,7 +153,7 @@ def main(args: Array[String]): Unit = {
 
 ![内存图](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q0edZ7IZ53ic8xWiaHNVlhzbWXoiaDqy8mYRpvs9TR0eicIH7ziaxKC2xicIAEjbcE2c6hOkPPiazLKjMqMQ/0?wx_fmt=png)
 
-```scala
+```
 def main(args:Array[String]): Unit={
     var age:Int = 10
     var sal:Double = 10.9
@@ -178,7 +178,7 @@ var|val 变量名 [:变量类型]=变量值
 - var修饰的对象引用可以改变,val修饰的则不可改变,但对象的状态(值)却是可以改变的.(比如::自定义对象,数组,集合等等)
 - 变量声明时,需要初始值
 
-```scala
+```
 object VarDemo02 {
 
   def main(args:Array[String]):Unit={
@@ -253,7 +253,7 @@ public final class VarDemo03$
 - Scala数据类型分为两大类AnyVal(值类型)和AnyRef(引用类型),注意:不管是AnyVal还是AnyRef都是对象
 - 相对于java的类型系统,scala要复杂些!也正是这复杂多变的类型系统才让面向对象编程和函数式编程完美的融合在了一起
 
-```scala
+```
 object TypeDemo01 {
 
   def main(args:Array[String]):Unit={
@@ -287,7 +287,7 @@ object TypeDemo01 {
 - Nothing类型也是bottom class,他是所有类的子类,在开发中通常可以将Nothing类型的值返回给任意变量或者函数,这里抛出异常很多. 
 - 在scala中仍然遵守,低精度的值,向高精度的值自动转换(implicit conversion)隐式转换
 
-```scala
+```
 object TypeDemo02 {
 
   def main(args: Array[String]): Unit = {
@@ -358,7 +358,7 @@ Scala的浮点类型可以表示一个小数,比如 123.4f,7.8,0.12等等.
     - 科学计数法形式:如:5.12e2=5.12乘以10的2次方,5.12E-2=5.12除以10的2次方
 - 通常情况下,应该使用Double型,因为它比Float型更精确(小数点后大致7位)
 
-```scala
+```
 object TypeDemo03 {
   def main(args: Array[String]): Unit = {
     //long的取值范围:9223372036854775807~-9223372036854775808
@@ -390,7 +390,7 @@ object TypeDemo03 {
 - 可以直接给Char赋一个整数,然后输出时,会按照对应的unicode字符输出.
 - Char类型是可以进行运算的,相当于一个整数,因为它都对应有Unicode码.  
 
-```scala
+```
 object CharDemo {
 
   def main(args:Array[String]):Unit={
@@ -449,7 +449,7 @@ object CharDemo {
 - Unit类型用来标识过程,也就是没有明确返回值的函数.由此可见,Unit类似于Java里的void.Unit只有一个实例,这个实例也没有实质的意义.
 - Nothing,可以作为没有正常返回值的方法的返回类型,非常直观的告诉你这个方法不会正常返回,而且由于Nothing是其他任意类型的子类,他还能跟要求返回值的方法兼容.  
 
-```scala
+```
 object UnitNullNothingDemo {
 
   def main(args: Array[String]): Unit = {
@@ -485,7 +485,7 @@ class Dog{
 - byte,short,char他们三者可以计算,在计算时首先转换为int类型.
 - 自动提升原则:表达式结果的类型自动提升为操作数中最大的类型.
 
-```scala
+```
 object Demo01 {
   def main(args: Array[String]): Unit = {
     var n1=10
@@ -548,7 +548,7 @@ scala还提供了非常强大的隐式转换机制(隐式函数,隐式类等等)
 - 在将String 类型转成基本数据类型时,要确保String类型能够转成有效的数据,比如我们可以把"123",转成一个整数,但是不能把"hello"转成一个整数.
 - "12.5" 不能转成Int,但可以转成Double
 
-```scala
+```
 object String2Basic {
 
   def main(args: Array[String]): Unit = {
@@ -591,7 +591,7 @@ Scala中的标识符声明,基本和Java是一致的,但是细节上会有所变
 - 操作符(比如+-*/)不能在标识符中间和最后.
 - 用反引号`....`包括的任意字符串,即使是关键字(39个)也可以[true].
 
-```scala
+```
 object IdenDemo01 {
 
   def main(args:Array[String]):Unit={
@@ -667,7 +667,7 @@ Scala有39个关键字
 
 ![算数运算符列表](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q0edZ7IZ53ic8xWiaHNVlhzbWa9r6icVLsSiau33hYxrwArIlUiaKurRDqnxTibCKZp87SK0zmVIc3Yo2XQ/0?wx_fmt=png)
 
-```scala
+```
 object Demo01 {
   def main(args: Array[String]): Unit = {
 
@@ -697,7 +697,7 @@ object Demo01 {
 }
 ```
 
-```scala
+```
 /**
    *假如还有97天放假，问：xx个星期零xx天
    * 1.搞清楚需求(读题)
@@ -771,7 +771,7 @@ object Demo01 {
 - 关系运算符
 - 赋值运算
 
-```scala
+```
 object Demo01 {
 
   def main(args: Array[String]): Unit = {
@@ -796,7 +796,7 @@ object Demo01 {
 }
 ```
 
-```scala
+```
 object Demo01 {
   def main(args:Array[String]): Unit = {
 
@@ -818,7 +818,7 @@ object Demo01 {
 }
 ```
 
-```scala
+```
 object Demo01 {
 
   def main(args:Array[String]):Unit={
@@ -853,3 +853,4 @@ trait AAA{
 }
 ```
 
+## 第四章 程序流程控制
