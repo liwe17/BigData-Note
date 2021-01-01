@@ -854,3 +854,142 @@ trait AAA{
 ```
 
 ## 第四章 程序流程控制
+
+### 4.1 程序的流程控制说明
+
+在程序中,程序运行的流程控制决定程序是如何执行的,是我们必须掌握的,主要有三大流程控制语句.
+- 顺序控制
+- 分支控制
+- 循环控制
+
+注意:Scala语言中控制结构和Java语言中的控制结构基本相同,在不考虑特殊应用场景的情况下,代码书写方式以及理解方式都没有台大区别.
+
+### 4.2 顺序控制的说明
+
+顺序控制介绍
+- 顺序从小到下逐行地执行,中间没有任何判断和跳转.
+
+顺序控制举例和注意事项
+- Scala中定义变量时采用合法的前向引用.
+
+```text
+//Scala中定义变量时采用合法的前向引用
+def main(args:Array[String]):Unit={
+  var num1=12
+  var num2=num1+2
+}
+
+//错误形式
+def main(args:Array[String]):Unit={
+  var num2=num1+2
+  var num1=12
+}
+```
+
+### 4.3 分支控制if-else
+#### 4.3.1 分支控制if-else介绍
+
+让程序有选择的执行,分支控制有三种:
+- 单分支
+- 双分支
+- 多分支
+
+#### 4.3.2 单分支的使用
+
+基本语法
+
+```text
+if(条件表达式){
+    执行代码块
+}
+说明:当条件表达式为true时,就会执行{}的代码
+```
+
+案例说明
+
+```text
+编写一个程序,可以输入人的年龄,如果该同志的年龄大于18岁,则输出"age>18"
+val age=20
+if(age>20){
+    println("age>18")
+}
+```
+
+单分支的案例说明
+```text
+object Demo01 {
+
+  def main(args:Array[String]):Unit={
+    println("输入年龄")
+    val age=StdIn.readInt()
+    if(age>18){
+      println("age>18")
+    }
+  }
+
+  //小技巧,如何查看某个包下包含的内容
+  //1.比如我们想看scala.io包有什么内容
+  //2.将光标放在io上即可,输入ctrl+b
+  //3.将光标放在StdIn上即可,输入ctrl+b,看的是StdIn源码
+}
+```
+
+#### 4.3.3 双分支
+
+基本语法
+```text
+if(条件表达式){
+    执行代码块1
+}else{
+    执行代码块2
+}
+
+说明:当条件表达式1,否则执行代码块2
+```
+
+案例演示
+```text
+object Demo02 {
+
+  def main(args:Array[String]):Unit={
+    val age=6
+    if(age>18){
+      println("age>18")
+    }else{
+      println("age<=18")
+    }
+  }
+}
+```
+
+#### 4.3.4 单分支和双分支课后题
+
+```text
+com.weiliai.chapter04.ifelse.Exercise01
+```
+
+#### 4.3.5 多分支
+
+基本方法
+```text
+if(条件表达式){
+    执行代码块1
+}else if(条件表达式2){
+    执行代码块2
+}else{
+    执行代码块n
+}
+
+注意:只能有一个执行入口
+```
+案例演示
+
+```text
+com.weiliai.chapter04.ifelse.Exercise02
+```
+#### 4.3.6 分支控制if-else注意事项
+
+
+
+
+
