@@ -1193,3 +1193,56 @@ com.weiliai.chapter04.mywhile.WhileDemo01
 - 与IF语句不同,while语句本身没有值,即整个while语句的结果是Unit类型的()
 - 因为while没有返回值,所以当要用该语句来计算并返回结果时,就不可避免使用变量,而变量需要声明在while循环的外部,那么等同于循环内部对外部的变量造成了影响,所以不推荐使用,而是推荐是for循环.
 
+### 4.8 do..while循环控制
+#### 4.8.1 基本用法
+
+```text
+do{
+    循环体(语句)
+    循环变量迭代
+}while(循环条件)
+```
+
+#### 4.8.2 do..while循环应用实例
+
+基本案例
+```text
+com.weiliai.chapter04.mydowhile.Demo01
+```
+
+#### 4.8.3 注意事项和细节说明
+
+- 循环条件是返回一个布尔值的表达式
+- do..while循环是先执行,再判断
+- 和while一样,因为do..while中没有返回值,所以当要用该语句来计算并返回结果时,就不可避免的使用变量,而变量的声明需要在do..while循环外部,那么等同于循环的内部对外部的变量造成了影响,不推荐使用.
+
+### 4.9 多重循环控制
+#### 4.9.1 介绍
+
+- 将一个循环放在另一个循环体内,就形成了嵌套循环,其中for,while,do..while均可作为外层循环和内层循环.[建议不超过3层]
+- 实质上,嵌套循环就是把内层循环当成外层循环的循环体.当只有内层循环条件为false,才会完全跳出内层循环,才会外层当次循环,开始下一次循环.
+- 设外层循环次数为m次,内层为n次,则内层循环体实际上需要执行m*n=mn次.
+
+#### 4.9.2 应用实例
+
+```text
+com.weiliai.chapter04.mutlfor.Exercise01
+com.weiliai.chapter04.mutlfor.Exercise02
+```
+
+### 4.10 while循环的中断
+#### 4.10.1 基本说明
+
+Scala内置控制结构特地去掉了break和continue,是为了更好的适应函数化编程,推荐使用函数式风格解决break和continue的功能,而不是一个关键字.
+
+#### 4.10.2 break的应用实例
+
+```text
+com.weiliai.chapter04.mybreak.WhileBreak
+```
+
+#### 4.10.3 如何实现continue的效果
+
+Scala内置控制结构特地也去掉了continue,是为了更好的适应函数化编程,可以使用if-else或循环守卫实现continue效果.
+
+
