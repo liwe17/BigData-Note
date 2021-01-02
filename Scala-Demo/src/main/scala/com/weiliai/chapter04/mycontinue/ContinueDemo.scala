@@ -1,4 +1,4 @@
-package com.weiliai.chapter04.mybreak
+package com.weiliai.chapter04.mycontinue
 
 /**
  * @Author: Doug Li
