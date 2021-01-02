@@ -26,7 +26,7 @@ object Exercise02 {
     if(m>0){
       x1=(-b+sqrt(m))/2*a
       x2=(-b-sqrt(m))/2*a
-      println("有两个解x1="+x1.formatted("%.2f")+"x2="+x2.formatted("%.2f")
+      println("有两个解x1="+x1.formatted("%.2f")+"x2="+x2.formatted("%.2f"))
     }else if(m==0){
       x1=(-b+sqrt(m))/2*a
       println("有一个解x1="+x1)

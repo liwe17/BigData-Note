@@ -989,7 +989,207 @@ com.weiliai.chapter04.ifelse.Exercise02
 ```
 #### 4.3.6 分支控制if-else注意事项
 
+- 如果大括号{}内的逻辑代码只有一行,大括号可以省略,这点和Java的规定一样.
+- Scala中任意表达式都是有返回值的,也就是以为if-else表达式其实是有返回结果的,具体返回结果的值取决于满足条件的代码块体的最后一行内容.
+- Scala中是没有三元运算符的,因此可以简写
 
+```text
+com.weiliai.chapter04.ifelse.Exercise03
+```
 
+### 4.4 嵌套分支
+#### 4.4.1 基本介绍
 
+在一个分支结构中又完整的嵌套了另一个完整的分支结构,里面的分支的结构称为内层分支,外面的分支结构称为外层分支,嵌套分支不要超过3层
+
+#### 4.4.2 基本语法
+
+```text
+if(){
+    if(){
+        
+    }else{
+    
+    }
+}
+```
+
+#### 4.4.3 应用案例
+
+```text
+com.weiliai.chapter04.ifelse.Exercise04
+com.weiliai.chapter04.ifelse.Exercise05
+```
+### 4.5 switch分支结构
+
+- scala中没有switch,而是使用模式匹配来处理.
+- 模式匹配涉及到的知识点比较综合,后续处理,match-case
+
+### 4.6 for循环控制
+#### 4.6.1 基本介绍
+
+Scala也为for循环这一常见的控制结构提供了非常多的特性,这些for循环的特性被称为for推倒式(for comprehension)或for表达式(for expression).
+
+#### 4.6.2 范围数据循环方式1
+
+基本案例
+
+```text
+for(i-> 1 to 3){
+    print(i+"")
+}
+println()
+
+说明
+- i表示循环的变量,<- 规定 to 规划
+- i将会从1-3循环,前后闭合
+
+com.weiliai.chapter04.myfor.ForDemo01
+```
+#### 4.6.3 范围数据循环方式2
+
+基本案例
+
+```text
+for(i <- 1 unit 3){
+    print(i+"")
+}
+println()
+
+说明
+- 前闭后开的范围和Java的arr.length()类似for(int i=0;i<arr.length;i++){}
+
+com.weiliai.chapter04.myfor.ForUnitDemo02
+```
+
+#### 4.6.4 循环守卫
+
+基本案例
+
+```text
+for(i <- 1 to 3 if i!=2){
+   print(i+"") 
+}
+println()
+
+说明
+- 循环守卫,即循环保护式(条件判断式,守卫).
+- 保护式为true则进入循环体内不,为false跳过,类似continue,等价于
+
+for(i <- 1 to 3){
+    if(i!=2){
+        print(i+"")
+    }
+}
+println()
+
+com.weiliai.chapter04.myfor.ForGuard
+```
+
+#### 4.6.5 引入变量
+
+基本案例
+```text
+for(i <- 1 to 3;j=4-i){
+    print(j+"")
+}
+
+说明
+- 没有关键字,所以范围后一定加;来隔断逻辑,代码等价于
+
+for(i <- 1 to 3){
+    val j=4-i
+    print(4-i)
+}
+
+com.weiliai.chapter04.myfor.ForVar
+```
+#### 4.6.6 嵌套循环
+
+基本案例
+```text
+for(i <- 1 to 3;j<-1 to 3){
+  print("i="+i+"j="+j)
+}
+
+说明
+- 上面代码等价于
+for(i <- 1 to 3){
+    for(j <- 1 to 3){
+        print("i="+i+"j="+j)         
+    }
+}
+```
+
+#### 4.6.7 循环返回值
+
+基本案例
+```text
+val res=for(i <- 1 to 10) yield i
+println(res)
+
+说明
+- 将遍历过程中处理的结果返回到一个新的Vector集合中,使用yield关键字
+```
+#### 4.6.8 使用花括号{}代替小括号()
+
+基本案例
+```text
+for(i <- 1 to 3;j=i*2){
+    println("i="+i+"j="+j)
+}
+改写
+for{
+    i <- 1 to 3
+    j=i*2}{
+    println("i="+i+"j="+j)
+}
+
+说明
+- {}和()对于for表达式来说都可以
+- for推导式有一个不成文的约定:当for推倒式仅包含单一表达式时使用圆括号,当其包含多个表达式时使用大括号
+- 当使用{}来换行写表达式时,分号就不用写了
+```
+#### 4.6.9 注意事项和细节说明
+
+- scala的for循环形式和Java时较大差异,这点请同学们注意,但是基本的原理还是一样的.
+- scala的for循环的步长如何控制![for(i <- Range(1,3,2)]
+- 思考:如何使用循环守卫控制步长?
+
+基本案例
+```text
+com.weiliai.chapter04.myfor.StepFor
+```
+
+#### 4.6.10 for循环练习题
+
+基本案例
+```text
+com.weiliai.chapter04.myfor.ForExercise01
+```
+
+### 4.7 while循环控制
+#### 4.7.1 基本语法
+
+循环变量初始化
+```text
+while(循环条件){
+    循环体(语句)
+    循环变量迭代
+}
+```
+
+#### 4.7.2 while循环应用实例
+
+基本案例
+```text
+com.weiliai.chapter04.mywhile.WhileDemo01
+```
+
+#### 4.7.3 注意事项和细节说明
+
+- 循环条件是返回一个布尔值的表达式
+- while循环是先判断在执行语句
+- 与IF语句不同,while语句本身没有值,即整个while语句的结果是Unit类型的()
+- 因为while没有返回值,所以当要用该语句来计算并返回结果时,就不可避免使用变量,而变量需要声明在while循环的外部,那么等同于循环内部对外部的变量造成了影响,所以不推荐使用,而是推荐是for循环.
 
