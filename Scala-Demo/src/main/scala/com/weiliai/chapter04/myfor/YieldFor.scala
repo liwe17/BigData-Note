@@ -1,5 +1,7 @@
 package com.weiliai.chapter04.myfor;
 
+import util.control.Breaks._
+
 /**
  * @Author: Doug Li
  * @Date 2021/1/2
@@ -21,5 +23,21 @@ object YieldFor {
       }
     }
     println(res)
+
+
+    //暂时不懂为什么不出结果?后续解决
+    breakable{
+      var sum=0
+      val res=for(i <-1 to 100) yield{
+        sum+=i
+        if(sum > 20){
+          i
+          break()
+        }else{
+          i
+        }
+      }
+      println(res)
+    }
   }
 }

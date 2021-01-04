@@ -9,8 +9,8 @@ object Exercise02 {
 
   def main(args: Array[String]): Unit = {
     for(i <- 1 to 9){
-      for(j <- i to 9){
-        print(i+"*"+j+"="+(i*j)+"\t")
+      for(j <- 1 to i){
+        print(j+"*"+i+"="+(i*j)+"\t")
       }
       println()
     }

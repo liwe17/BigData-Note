@@ -1285,7 +1285,7 @@ com.weiliai.chapter04.mycontinue.ContinueDemo
 
 #### 5.2.2 在学习scala中将方法,函数,函数式编程和面向对象编程关系分析图
 
-//TODO 
+![关系图](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q14YPbSrQSdYjI9sTuONnyUeIc6CbrN5uxylFYfAY4iaDk1brDq8RMaj1nNrYDWD1lUgiaHTQgHvCaQ/0?wx_fmt=png)
 
 #### 5.2.3 函数式编程的小结
 
@@ -1296,7 +1296,7 @@ com.weiliai.chapter04.mycontinue.ContinueDemo
 
 ### 5.3 为什么需要函数
 
-// TODO 
+![为什么要用函数](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q14YPbSrQSdYjI9sTuONnyU9tmPPxeYibibz3w8KlDULFnzKDMz5zLibibRXuRTBXrSR2gMx2aoS203uw/0?wx_fmt=png)
 
 ### 5.4 函数的定义
 #### 5.4.1 基本语法
@@ -1327,7 +1327,7 @@ com.weiliai.chapter05.fun.FunDemo01
 
 为了让大家更好的理解函数调用机制,看1个案例,并画出示意图,这个很重要,比如getSum计算两个数的和,并返回结果
 
-//TODO
+![调用过程](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q14YPbSrQSdYjI9sTuONnyUYAlatXO5VmAQSocvfnoGOjPKRdspLNibQVwoGV4f98EPfky0y8g94og/0?wx_fmt=png)
 
 #### 5.5.2 函数递归调用的重要的规则和小结
 
@@ -1337,4 +1337,10 @@ com.weiliai.chapter05.fun.FunDemo01
 - 递归必须向退出递归的条件逼近,否则就是无限递归
 - 当一个函数执行完毕或遇到return,就会返回,遵守谁调用,就把结果返给谁.
 
+#### 5.5.3 使用scala递归的应用案例
 
+```text
+com.weiliai.chapter05.recursive.Exercise01
+```
+
+### 5.6 函数注意事项和细节讨论
