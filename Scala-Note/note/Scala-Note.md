@@ -1573,6 +1573,7 @@ class 类名(形参列表){ //主构造器
 #### 6.4.6 Scala构造器的快速入门
 
 - com.weiliai.chapter06.constructor.ConDemo01
+- com.weiliai.chapter06.constructor.ConDemo02
 - com.weiliai.chapter06.constructor.ConDemo03
 
 #### 6.4.7 Scala构造器注意事项和细节
@@ -1585,10 +1586,46 @@ class 类名(形参列表){ //主构造器
 - 如果像让主构造器私有,可以在()前加private,这样用户就只能通过辅助构造器来构造对象了
 
 ### 6.5 属性高级
+
+- com.weiliai.chapter06.constructor.ConDemo04
+- com.weiliai.chapter06.constructor.BeanPropertyDemo
+
 #### 6.5.1 构造器参数
 
+- Scala的主构造器的形参未用任何修饰符修饰,那么这个参数是局部变量
+- 如果参数使用val关键字声明,那么Scala会将参数作为类的私有的只读属性使用
+- 如果参数使用var关键字声明,那么Scala会将参数作为类的成员属性使用,并会提供属性的对应的xxx()[类似getter],xxx_$eq()[类似setter]方法,即这时成员属性时私有的,但是可以读写
 
+#### 6.5.2 Bean属性
 
+- JavaBean规范定义了Java的属性是像getXxx()和setXxx()的方法.
+- 为了Java的互操作性,将Scala字段加@BeanProperty时,这样会自动生成额外规范的setXxx/getXxx方法
 
+### 6.6 Scala对象创建的流程分析
+#### 6.6.1 案例分析
+
+```scala
+class Person{
+  var age:Short = 90
+  var name:String=_
+  def this(n:String,a:Int){
+     this()
+     this.name=n
+     this.age=a 
+  }
+  
+  def main(args:Array[String]):Unit={
+    var p = new Person("小倩",20) 
+  }
+}
+```
+#### 6.6.2 流程分析
+
+- 加载类的信息(属性信息,方法信息)
+- 在内存(堆)中开辟空间
+- 在父类的构造器(主和辅)进行初始化
+- 使用主构造器对属性进行初始化[age:90,name=null]
+- 使用辅助构造器对属性初始化[age:20,name="小倩"]
+- 将开辟的的对象地址赋给P这个引用
 
 
