@@ -1726,11 +1726,9 @@ class Person{
 
 - 一个包对象会生成两个类package和package$
 
-[包对象1](http://wwww.baidu.com)
+![包对象1](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q0szNswNvo9haAuL4ZMZaLqHiboQqeJSibKrTPJ2ztShPSKk3f55bg9cpSVBpmib74oBfvNQ6ibx6HMGw/0?wx_fmt=png)
 
-- 包去使用的包对象的变量或者方法的原理
-
-[包对象2](http://wwww.baidu.com)
+![包对象2](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q0szNswNvo9haAuL4ZMZaLqgcRoWVibRaTDrstF3HQ2cvzGIkKiczq6ZgcAtB5gawh6s7TdQH8JXlKA/0?wx_fmt=png)
 
 
 #### 7.1.14 包对象的注意事项
@@ -1829,4 +1827,223 @@ class Person{
 - 如果引入的多个包中含有相同的类,那么可以将不需要的类进行重命名区分,这个就是重命名
 - 如果某个冲突的类根本就不会用到,那么这个类可以直接隐藏掉
 
- 
+### 7.4 面向对象编程方法-抽象
+
+![如何理解抽象](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q0szNswNvo9haAuL4ZMZaLqd8eOvBNf2nhibOBO7XSD0sjH31aj7j0XR0DA27cWu3CqkhoCqjU4IbA/0?wx_fmt=png)
+
+- com.weiliai.chapter07.abstractdemo.BankDemo
+
+### 7.5 面向对象编程的三大特征
+#### 7.5.1 基本介绍
+
+- 面向对象编程三大特征
+    - 封装
+    - 继承
+    - 多态
+
+#### 7.5.2 封装介绍
+
+- 封装(encapsulation)就是把抽象出的数据和对数据的操作封装到一起,数据被保护在内部,程序的其他部分只有通过被授权的操作(成员方法),才能对数据进行操作
+
+#### 7.5.3 封装的理解和好处
+
+- 隐藏实现细节
+- 可对数据进行验证,保证安全合理
+- 同时可以加入业务逻辑
+
+#### 7.5.4 如何体现封装
+
+- 对类中的属性进行封装
+- 通过成员方法,包实现封装
+
+#### 7.5.5 封装的实现步骤
+
+- 属性进行私有化
+- 提供公共的set方法,用于对属性判断并赋值
+- 提供一个公共的get方法,用于获取属性的值
+
+#### 7.5.6 快速入门案例
+
+- com.weiliai.chapter07.encap.TestEncap
+
+#### 7.5.7 scala封装的注意事项的小结
+
+- scala中为了简化开发,当声明属性为var时,本身就自动提供了对应的setter/getter方法
+- 如果属性声明为private,则自动生成的setter/getter方法也是private
+- 如果属性省略访问权限修饰符,那么自动生成setter/getter的方法是public
+
+### 7.6 面向对象编程-继承
+#### 7.6.1 Java继承的简单回顾
+
+```text
+class 子类名 extends 父类名{类体}
+
+子类继承父类的属性和方法
+```
+
+#### 7.6.2 继承的基本介绍和示意图
+
+- 继承可以解决代码复用,让我们的编程更靠近人类思维.
+- 当多个类存在相同的属性(变量)和方法时,可以在这些类中抽取父类,在父类中定义这些相同的属性和方法,所有子类不需要重新定义这些属性和方法,只需要通过extends语句声明继承父类即可
+- 和Java一样scala也支持类的单继承.
+
+![继承示意图](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q1iaErO2W51xFam1xibz0LUAFo8lfKfmlK9cGJqzdYsc0JAg5SWskxQGDg33Xu0nhpR2ic3tucqqA2kw/0?wx_fmt=png)
+
+#### 7.6.3 Scala继承的基本语法
+
+```text
+class 子类名 extends 父类名{类体}
+```
+
+#### 7.6.4 scala继承快速入门
+
+- com.weiliai.chapter07.myextends.Extends01
+
+#### 7.6.5 scala继承给编程带来的便利
+
+- 代码的复用性提高
+- 代码的扩展性和维护性提高,当我们修改父类时,对应的子类就会继承相应的属性和方法
+
+#### 7.6.6 scala子类继承了什么,怎么继承了
+
+- 子类继承了所有的属性,只有私有的属性不能直接访问.
+- 需要通过公共方法访问
+
+
+```text
+com.weiliai.chapter07.myextends.Extends02
+```
+
+#### 7.6.7 重写方法
+
+- scala中明确规定,重写一个非抽象方法需要override修饰符,调用父类的方法需要使用super()关键字
+
+```text
+com.weiliai.chapter07.myextends.MethodOverride01
+```
+
+#### 7.6.8 Scala中类型检查和转换
+
+- 基本介绍
+    - 测试某个对象是否属于给定的某个类,使用isInstanceOf方法
+        - obj.isInstanceOf[T] 如同Java中 obj instanceOf T 判断obj是不是T类型
+    - 用asInstanceOf方法,将引用转换为子类的引用.
+        - obj.asInstanceOf[T] 如同Java中 (T) obj 将obj强转为T
+    - classOf 获取对象的类名
+        - classOf[String] 如同Java的String.class
+        
+- 代码说明
+    - com.weiliai.chapter07.myextends.TypeConvert
+
+- 最佳实践
+    - 类型检查和转换的最大价值在于:可以判断传入对象的类型,然后转成对应的子类对象,进行相关操作,这里体现出了多态的特点
+    - com.weiliai.chapter07.myextends.TypeConvertCase
+    
+#### 7.6.9 Java中超类的构造回顾
+
+- Java中,创建子类对象时,子类的构造器总是去调用一个父类的构造器(显式或隐式调用)
+- com.weiliai.chapter07.myextends.JavaBaseConstructor
+
+#### 7.6.10 Scala中超类的构造
+
+- Scala超类的构造说明
+    - 类有一个主构造器和任意数量的辅助构造器,而每个辅助构造器都必须先调用主构造器(也可以间接调用)
+    - 只有主构造器可以父类的构造器,辅助构造器不能直接调用父类的构造器,在scala的构造器中,不能显示super(params)
+
+- 代码说明
+    - com.weiliai.chapter07.myextends.ScalaBaseConstructor
+
+#### 7.6.11 覆写字段
+
+- 基本介绍
+    - 在Scala中,子类改写父类的字段,我们称为覆写/重写字段.覆写字段需使用override修饰
+    
+- 回顾Java
+    - 在Java中只有方法的重写,没有属性字段的重写,准确的讲,是隐藏字段代替了重写
+    - 动态绑定机制
+        - 如果调用的是方法,则JVM会将该方法和对象的内存地址绑定
+        - 如果调用的是一个属性,则没有动态绑定机制,在哪里调用,就返回对应值
+        - com.weiliai.chapter07.myextends.JavaDynamicBind
+
+- scala覆写字段
+    - 覆写字段的注意事项和细节
+        - def只能重写一个def(即:方法只能重写另一个方法)
+        - val只能重写另一个val属性或重写不带参数def
+        - var只能重写另一个抽象属性
+    - com.weiliai.chapter07.myextends.MethodOverride01
+    - com.weiliai.chapter07.myextends.ScalaFieldOverrideDetail02
+    - com.weiliai.chapter07.myextends.ScalaFieldOverrideDetail03
+
+- 抽象属性:声明未初始化的变量就是抽象的属性,抽象属性在抽象类
+- var重写抽象的var属性小结
+    - 一个属性没有初始化,那这个属性就是抽象属性
+    - 抽象属性在编译成字节码文件时,属性并不会声明,但是会自动生成抽象方法,所以类必须声明为抽象类
+    - 如果是覆写一个父类的抽象属性,那么override关键字可省略
+        - 父类的抽象属性,生成的是抽象方法,因此不涉及到方法重写的概念,因此override可省略
+
+#### 7.6.12 抽象类
+
+- 基本介绍
+    - 在scala中,通过abstract关键字标记不能被实例化的类.方法不用标记abstract,只要省掉方法体即可
+    - 抽象类可以拥有抽象字段,抽象字段/属性就是没有初始值的字段
+
+- 入门案例
+    - com.weiliai.chapter07.myextends.AbstractDemo01
+
+#### 7.6.13 Scala抽象类使用的注意事项和细节讨论
+
+- 抽象类不能被实例化
+- 抽象类不一定要含有abstract方法,也就是说,抽象类没有abstract方法
+- 一旦类包含了抽象方法或者抽象属性,则这个类必须声明为abstract
+- 抽象方法不能有主体,不允许使用abstract修饰
+- 如果一个类继承了抽象类,则它必须实现抽象类的所有抽象方法和抽象属性,除非它自己也声明为abstract类
+- 抽象方法和抽象属性不能使用private,final来修饰,因为这些关键字都是和重写实现相违背的
+- 抽象类中可以有实现的方法
+- 子类重写抽象方法不需要override,写上也不会报错
+
+#### 7.6.14 匿名子类
+
+- 基本介绍
+    - 和Java一样,可以通过包含带有定义或重写的代码块的方式创建一个匿名的子类
+    
+- Java中匿名子类的使用回顾
+    - com.weiliai.chapter07.myextends.NoNameDemo01
+- Scala匿名子类案例
+    - com.weiliai.chapter07.myextends.ScalaNoNameDemo02
+    
+#### 7.6.15 继承层级
+
+- scala继承层级一览图
+
+![scala继承层级](https://mmbiz.qpic.cn/mmbiz_png/bHb4F3h61q36OSPpnIRoS4TKOSYXj7OBJeYIRnAlmv6jsB9YHCtITXoBoDe9lRUKiaUrJ1oJb1M828u9WWggojg/0?wx_fmt=png)
+
+- 图中小结
+    - 在scala中,所有其他类都是AnyRef的子类,类似Java的Object
+    - AnyVal和AnyRef都扩展自Any类,Any类是根节点
+    - Any中定义了isInstanceOf,asInstanceOf方法,以及哈希方法等
+    - Null类型的唯一实例就是null对象,可以将null赋值给任何引用,但不能赋值给值类型的变量
+    - Nothing类型没有实例,它对于泛型结构是用处的,举例:空列表Nil的类型是List[Nothing],他是List[T]的子类型,T可以是任何类
+
+## 第八章 面向对象编程(高级特性)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
